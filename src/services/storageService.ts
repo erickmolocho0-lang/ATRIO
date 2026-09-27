@@ -13,6 +13,7 @@ export const CLAVES_ALMACENAMIENTO = {
   bloqueoInicioSesion: 'atrio.login.lockedUntil',
   preferenciasConfiguracion: 'atrio.configuracion.preferencias',
   direcciones: 'atrio.direcciones',
+  pedidos: 'atrio.pedidos',
 } as const;
 
 // SecureStore limita cada valor a ~2 KB y la sesión de Supabase suele pesar más: se guarda en fragmentos.

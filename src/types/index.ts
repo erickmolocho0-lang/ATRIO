@@ -6,3 +6,4 @@ export * from './Usuario';
 export * from './Direccion';
 export * from './Checkout';
 export * from './Admin';
+export * from './Pedidos';

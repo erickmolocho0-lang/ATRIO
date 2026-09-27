@@ -1,5 +1,6 @@
 import { servicioAlmacenamiento } from './storageService';
 import { CLAVES_ALMACENAMIENTO } from './storageService';
+import { servicioBiometria } from './servicioBiometria';
 import type { Usuario } from '@/types/Usuario';
 
 const CORREO_DEMO = 'hola@atrio.pe';
@@ -20,6 +21,7 @@ const USUARIA_DEMO: UsuarioLocal = {
 
 export class ErrorCredencialesInvalidas extends Error {}
 export class ErrorCorreoRegistrado extends Error {}
+export class ErrorBiometriaNoConfigurada extends Error {}
 
 async function obtenerUsuarios(): Promise<UsuarioLocal[]> {
   const guardados = await servicioAlmacenamiento.obtenerDato<UsuarioLocal[]>(
@@ -43,6 +45,24 @@ export const servicioAutenticacion = {
         && candidato.contrasena === contrasena,
     );
     if (!usuario) throw new ErrorCredencialesInvalidas();
+    return guardarSesion(usuario);
+  },
+
+  async iniciarSesionBiometrica(): Promise<Usuario> {
+    const preferencias = await servicioAlmacenamiento.obtenerDato<{ biometria?: boolean }>(
+      CLAVES_ALMACENAMIENTO.preferenciasConfiguracion,
+    );
+    const usuarioId = await servicioAlmacenamiento.obtenerDato<string>(
+      CLAVES_ALMACENAMIENTO.usuarioBiometria,
+    );
+    if (!preferencias?.biometria || !usuarioId) throw new ErrorBiometriaNoConfigurada();
+
+    const verificada = await servicioBiometria.autenticar('Inicia sesión con huella o rostro');
+    if (!verificada) throw new ErrorBiometriaNoConfigurada();
+
+    const usuario = (await obtenerUsuarios()).find((candidato) => candidato.id === usuarioId)
+      ?? (usuarioId === USUARIA_DEMO.id ? USUARIA_DEMO : null);
+    if (!usuario) throw new ErrorBiometriaNoConfigurada();
     return guardarSesion(usuario);
   },
 

@@ -13,6 +13,7 @@ interface AuthContexto {
   usuario: Usuario | null;
   listo: boolean;
   iniciarSesion: (email: string, contrasena: string) => Promise<Usuario>;
+  iniciarSesionBiometrica: () => Promise<Usuario>;
   registrar: (datos: {
     nombre: string;
     email: string;
@@ -41,6 +42,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return usuarioAutenticado;
   }, []);
 
+  const iniciarSesionBiometrica = useCallback(async () => {
+    const usuarioAutenticado = await servicioAutenticacion.iniciarSesionBiometrica();
+    setUsuario(usuarioAutenticado);
+    return usuarioAutenticado;
+  }, []);
+
   const registrar = useCallback(async (datos: {
     nombre: string;
     email: string;
@@ -58,7 +65,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   return (
-    <ContextoAuth.Provider value={{ usuario, listo, iniciarSesion, registrar, cerrarSesion }}>
+    <ContextoAuth.Provider value={{ usuario, listo, iniciarSesion, iniciarSesionBiometrica, registrar, cerrarSesion }}>
       {children}
     </ContextoAuth.Provider>
   );

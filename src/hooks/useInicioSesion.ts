@@ -1,7 +1,9 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useConfiguracion } from '@/hooks/useConfiguracion';
 import { CLAVES_ALMACENAMIENTO, servicioAlmacenamiento } from '@/services/storageService';
+import { servicioBiometria } from '@/services/servicioBiometria';
 
 const INTENTOS_MAXIMOS = 5;
 const DURACION_BLOQUEO_MS = 15 * 60 * 1000;
@@ -12,13 +14,16 @@ interface EstadoInicioSesion {
   mensaje: string | null;
   cargando: boolean;
   bloqueado: boolean;
+  biometriaActiva: boolean;
   actualizarCorreo: (valor: string) => void;
   actualizarContrasena: (valor: string) => void;
   enviar: () => Promise<void>;
+  iniciarSesionBiometrica: () => Promise<void>;
 }
 
 export function useInicioSesion(): EstadoInicioSesion {
-  const { iniciarSesion } = useAuth();
+  const { iniciarSesion, iniciarSesionBiometrica } = useAuth();
+  const { preferencias, hidratado } = useConfiguracion();
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [mensajeError, setMensajeError] = useState<string | null>(null);
@@ -26,6 +31,30 @@ export function useInicioSesion(): EstadoInicioSesion {
   const [intentos, setIntentos] = useState(0);
   const [bloqueadoHasta, setBloqueadoHasta] = useState<number | null>(null);
   const [ahora, setAhora] = useState(() => Date.now());
+  const [biometriaActiva, setBiometriaActiva] = useState(false);
+
+  useEffect(() => {
+    let vigente = true;
+
+    async function revisarBiometria() {
+      if (!hidratado || !preferencias.biometria) {
+        setBiometriaActiva(false);
+        return;
+      }
+      const usuarioGuardado = await servicioAlmacenamiento.obtenerDato<string>(
+        CLAVES_ALMACENAMIENTO.usuarioBiometria,
+      );
+      const disponible = usuarioGuardado
+        ? await servicioBiometria.estaDisponible().catch(() => false)
+        : false;
+      if (vigente) setBiometriaActiva(disponible);
+    }
+
+    void revisarBiometria();
+    return () => {
+      vigente = false;
+    };
+  }, [hidratado, preferencias.biometria]);
 
   useEffect(() => {
     (async () => {
@@ -125,14 +154,33 @@ export function useInicioSesion(): EstadoInicioSesion {
     }
   }, [cargando, bloqueado, correo, contrasena, intentos, iniciarSesion]);
 
+  const iniciarSesionConBiometria = useCallback(async () => {
+    if (cargando || bloqueado || !biometriaActiva) return;
+    setCargando(true);
+    limpiarError();
+    try {
+      const usuario = await iniciarSesionBiometrica();
+      await servicioAlmacenamiento.eliminarDato(CLAVES_ALMACENAMIENTO.intentosInicioSesion);
+      await servicioAlmacenamiento.eliminarDato(CLAVES_ALMACENAMIENTO.bloqueoInicioSesion);
+      setIntentos(0);
+      router.replace(usuario.rol === 'propietaria' ? '/admin' : '/(tabs)');
+    } catch {
+      setMensajeError('No se pudo verificar tu identidad. Inicia sesión con correo y contraseña.');
+    } finally {
+      setCargando(false);
+    }
+  }, [bloqueado, biometriaActiva, cargando, iniciarSesionBiometrica, limpiarError]);
+
   return {
     correo,
     contrasena,
     mensaje,
     cargando,
     bloqueado,
+    biometriaActiva,
     actualizarCorreo,
     actualizarContrasena,
     enviar,
+    iniciarSesionBiometrica: iniciarSesionConBiometria,
   };
 }

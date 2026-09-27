@@ -9,6 +9,7 @@ export const CLAVES_ALMACENAMIENTO = {
   favoritos: 'atrio.favoritos',
   usuarios: 'atrio.auth.users',
   usuarioSesion: 'atrio.auth.user',
+  usuarioBiometria: 'atrio.auth.biometricUser',
   intentosInicioSesion: 'atrio.login.attempts',
   bloqueoInicioSesion: 'atrio.login.lockedUntil',
   preferenciasConfiguracion: 'atrio.configuracion.preferencias',

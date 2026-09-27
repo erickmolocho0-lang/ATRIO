@@ -1,30 +1,27 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { COLORS } from '@/constants/colors';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { nombreEstadoPedido } from '@/data/estadosPedido';
 import { servicioPedidos } from '@/services/servicioPedidos';
-import type { EstadoPedido, Pedido } from '@/types';
+import type { Pedido } from '@/types';
 import { formatearSoles } from '@/utils/moneda';
-
-const NOMBRE_ESTADO: Record<EstadoPedido, string> = {
-  preparado: 'Preparado',
-  en_camino: 'En camino',
-  entregado: 'Entregado',
-  cancelado: 'Cancelado',
-  devuelto: 'Devuelto',
-};
 
 function FilaPedido({ pedido }: { pedido: Pedido }) {
   const fecha = new Date(pedido.fecha).toLocaleDateString('es-PE', { dateStyle: 'medium' });
   const cantidadProductos = pedido.items.reduce((total, item) => total + item.cantidad, 0);
 
   return (
-    <View style={styles.fila}>
+    <Pressable
+      style={styles.fila}
+      onPress={() => router.push({ pathname: '/pedido/[numero]', params: { numero: pedido.numero } })}
+      accessibilityRole="button"
+    >
       <View style={styles.izquierda}>
         <Text style={styles.numero}>{pedido.numero}</Text>
         <Text style={styles.secundario}>
@@ -33,9 +30,9 @@ function FilaPedido({ pedido }: { pedido: Pedido }) {
       </View>
       <View style={styles.derecha}>
         <Text style={styles.total}>{formatearSoles(pedido.resumen.total)}</Text>
-        <Text style={styles.estado}>{NOMBRE_ESTADO[pedido.estado]}</Text>
+        <Text style={styles.estado}>{nombreEstadoPedido[pedido.estado]}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

@@ -3,6 +3,7 @@ import { cupones } from '@/data/cupones';
 import { CLAVES_ALMACENAMIENTO, servicioAlmacenamiento } from '@/services/storageService';
 import type { ItemCarrito, Producto, ResumenCompra } from '@/types';
 import { calcularResumenCompra } from '@/utils/precio';
+import { buscarVariantePorId } from '@/utils/variantes';
 
 export const CANTIDAD_MINIMA = 1;
 export const CANTIDAD_MAXIMA = 20;
@@ -18,9 +19,9 @@ interface ValorCarritoContext {
   codigoCupon: string | null;
   porcentajeDescuento: number;
   resumen: ResumenCompra;
-  agregarItem: (producto: Producto, talla: string, cantidad?: number) => void;
-  quitarItem: (productoId: string, talla: string) => void;
-  cambiarCantidad: (productoId: string, talla: string, cantidad: number) => void;
+  agregarItem: (producto: Producto, varianteId: string, cantidad?: number) => void;
+  quitarItem: (productoId: string, varianteId: string) => void;
+  cambiarCantidad: (productoId: string, varianteId: string, cantidad: number) => void;
   vaciarCarrito: () => void;
   aplicarCupon: (codigo: string) => boolean;
   quitarCupon: () => void;
@@ -28,12 +29,17 @@ interface ValorCarritoContext {
 
 export const CarritoContext = createContext<ValorCarritoContext | null>(null);
 
-function limitarCantidad(cantidad: number): number {
-  return Math.max(CANTIDAD_MINIMA, Math.min(CANTIDAD_MAXIMA, cantidad));
+function limitarCantidad(cantidad: number, tope: number): number {
+  return Math.max(CANTIDAD_MINIMA, Math.min(CANTIDAD_MAXIMA, tope, cantidad));
 }
 
-function mismaLinea(item: ItemCarrito, productoId: string, talla: string): boolean {
-  return item.producto.id === productoId && item.talla === talla;
+function mismaLinea(item: ItemCarrito, productoId: string, varianteId: string): boolean {
+  return item.producto.id === productoId && item.varianteId === varianteId;
+}
+
+/** Descarta líneas persistidas cuya variante ya no exista (p. ej. carritos guardados con el esquema anterior). */
+function lineasValidas(items: ItemCarrito[]): ItemCarrito[] {
+  return items.filter((item) => buscarVariantePorId(item.producto, item.varianteId) !== undefined);
 }
 
 function buscarPorcentajeCupon(codigo: string): number | null {
@@ -53,7 +59,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
       .obtenerDato<EstadoCarritoPersistido>(CLAVES_ALMACENAMIENTO.carrito)
       .then((guardado) => {
         if (guardado) {
-          setItems(guardado.items ?? []);
+          setItems(lineasValidas(guardado.items ?? []));
           setCodigoCupon(guardado.codigoCupon ?? null);
         }
       })
@@ -67,35 +73,48 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
     }
   }, [items, codigoCupon, hidratado]);
 
-  const agregarItem = useCallback((producto: Producto, talla: string, cantidad = 1) => {
+  const agregarItem = useCallback((producto: Producto, varianteId: string, cantidad = 1) => {
+    const variante = buscarVariantePorId(producto, varianteId);
+    if (!variante || variante.stock <= 0) return;
+
     setItems((previos) => {
-      const existente = previos.find((item) => mismaLinea(item, producto.id, talla));
+      const existente = previos.find((item) => mismaLinea(item, producto.id, varianteId));
       if (existente) {
         return previos.map((item) =>
-          mismaLinea(item, producto.id, talla)
-            ? { ...item, cantidad: limitarCantidad(item.cantidad + cantidad) }
+          mismaLinea(item, producto.id, varianteId)
+            ? { ...item, cantidad: limitarCantidad(item.cantidad + cantidad, variante.stock) }
             : item,
         );
       }
-      return [...previos, { producto, talla, cantidad: limitarCantidad(cantidad) }];
+      return [
+        ...previos,
+        {
+          producto,
+          varianteId,
+          talla: variante.talla,
+          colorId: variante.colorId,
+          cantidad: limitarCantidad(cantidad, variante.stock),
+        },
+      ];
     });
   }, []);
 
-  const quitarItem = useCallback((productoId: string, talla: string) => {
-    setItems((previos) => previos.filter((item) => !mismaLinea(item, productoId, talla)));
+  const quitarItem = useCallback((productoId: string, varianteId: string) => {
+    setItems((previos) => previos.filter((item) => !mismaLinea(item, productoId, varianteId)));
   }, []);
 
   const cambiarCantidad = useCallback(
-    (productoId: string, talla: string, cantidad: number) => {
+    (productoId: string, varianteId: string, cantidad: number) => {
       setItems((previos) => {
         if (cantidad < CANTIDAD_MINIMA) {
-          return previos.filter((item) => !mismaLinea(item, productoId, talla));
+          return previos.filter((item) => !mismaLinea(item, productoId, varianteId));
         }
-        return previos.map((item) =>
-          mismaLinea(item, productoId, talla)
-            ? { ...item, cantidad: limitarCantidad(cantidad) }
-            : item,
-        );
+        return previos.map((item) => {
+          if (!mismaLinea(item, productoId, varianteId)) return item;
+          const variante = buscarVariantePorId(item.producto, varianteId);
+          const tope = variante?.stock ?? CANTIDAD_MAXIMA;
+          return { ...item, cantidad: limitarCantidad(cantidad, tope) };
+        });
       });
     },
     [],

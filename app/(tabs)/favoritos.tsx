@@ -35,12 +35,12 @@ export default function PantallaFavoritos() {
             alPresionar={() => router.push(`/producto/${item.id}`)}
             alQuitarFavorito={() => quitarFavorito(item.id)}
             alAgregar={() => {
-              const tallaDisponible = item.tallas.find((t) => t.disponible);
-              if (!tallaDisponible) {
+              const varianteDisponible = item.variantes.find((v) => v.stock > 0);
+              if (!varianteDisponible) {
                 router.push(`/producto/${item.id}`);
                 return;
               }
-              agregarItem(item, tallaDisponible.talla, 1);
+              agregarItem(item, varianteDisponible.id, 1);
               router.push('/(tabs)/carrito');
             }}
           />

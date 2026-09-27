@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useRef } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -26,9 +27,11 @@ export default function PantallaInicioSesion() {
     mensaje,
     cargando,
     bloqueado,
+    biometriaActiva,
     actualizarCorreo,
     actualizarContrasena,
     enviar,
+    iniciarSesionBiometrica,
   } = useInicioSesion();
 
   const referenciaContrasena = useRef<TextInput>(null);
@@ -127,6 +130,24 @@ export default function PantallaInicioSesion() {
                 <Text style={estilos.botonPrimarioTexto}>INICIAR SESIÓN</Text>
               )}
             </Pressable>
+
+            {biometriaActiva ? (
+              <Pressable
+                style={estilos.botonBiometrico}
+                onPress={iniciarSesionBiometrica}
+                disabled={cargando || bloqueado}
+                accessibilityRole="button"
+              >
+                {cargando ? (
+                  <ActivityIndicator color={COLORS.tinta} />
+                ) : (
+                  <>
+                    <Ionicons name="finger-print-outline" size={20} color={COLORS.tinta} />
+                    <Text style={estilos.botonBiometricoTexto}>INICIAR CON HUELLA O ROSTRO</Text>
+                  </>
+                )}
+              </Pressable>
+            ) : null}
 
             <View style={estilos.divisor}>
               <View style={estilos.divisorLinea} />
@@ -265,6 +286,23 @@ const estilos = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 1.3,
     color: COLORS.papel,
+  },
+  botonBiometrico: {
+    marginTop: 12,
+    minHeight: 50,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.tinta20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+  },
+  botonBiometricoTexto: {
+    fontFamily: 'Archivo_600SemiBold',
+    fontSize: 11,
+    letterSpacing: 0.6,
+    color: COLORS.tinta,
   },
 
   divisor: {

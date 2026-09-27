@@ -5,14 +5,17 @@ import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { FilaInterruptor } from '@/components/profile/FilaInterruptor';
 import { useConfiguracion } from '@/hooks/useConfiguracion';
 import { useTema } from '@/hooks/useTema';
+import { useAuth } from '@/context/AuthContext';
 import { servicioNotificaciones } from '@/services/servicioNotificaciones';
 import { servicioCorreos } from '@/services/servicioCorreos';
 import { servicioBiometria } from '@/services/servicioBiometria';
+import { CLAVES_ALMACENAMIENTO, servicioAlmacenamiento } from '@/services/storageService';
 import { usuarioMock } from '@/data/usuarioMock';
 
 export default function PantallaConfiguracion() {
   const { preferencias, alternarPreferencia } = useConfiguracion();
   const { colores } = useTema();
+  const { usuario } = useAuth();
 
   const manejarNotificaciones = async (activar: boolean) => {
     if (activar) {
@@ -50,6 +53,10 @@ export default function PantallaConfiguracion() {
 
   const manejarBiometria = async (activar: boolean) => {
     if (activar) {
+      if (!usuario) {
+        Alert.alert('Inicia sesión', 'Debes iniciar sesión para activar el acceso biométrico.');
+        return;
+      }
       const disponible = await servicioBiometria.estaDisponible();
       if (!disponible) {
         Alert.alert(
@@ -66,6 +73,12 @@ export default function PantallaConfiguracion() {
         Alert.alert('No se pudo verificar', 'No se completó la verificación biométrica.');
         return;
       }
+      await servicioAlmacenamiento.guardarDato(
+        CLAVES_ALMACENAMIENTO.usuarioBiometria,
+        usuario.id,
+      );
+    } else {
+      await servicioAlmacenamiento.eliminarDato(CLAVES_ALMACENAMIENTO.usuarioBiometria);
     }
     alternarPreferencia('biometria');
   };

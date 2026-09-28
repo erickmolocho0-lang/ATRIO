@@ -8,7 +8,7 @@ export const COLORS_OSCURO: Record<keyof typeof COLORS, string> = {
   tinta: '#F5F3EF',
   arcilla: '#E8875A',
   lino: '#232219',
-  blanco: '#F5F3EF',
+  blanco: '#1F1E17', 
 
   textoSecundario: `rgba(${TEXTO}, 0.55)`,
   borde: `rgba(${TEXTO}, 0.14)`,

@@ -10,7 +10,8 @@ interface PropiedadesFilaInterruptor {
 }
 
 export function FilaInterruptor({ titulo, descripcion, valor, onCambiar }: PropiedadesFilaInterruptor) {
-  const { colores } = useTema();
+  const { colores, esOscuro } = useTema();
+  const colorPerilla = valor ? colores.papel : esOscuro ? '#A19E96' : '#FFFFFF';
 
   return (
     <View style={[styles.fila, { borderBottomColor: colores.borde }]}>
@@ -22,7 +23,7 @@ export function FilaInterruptor({ titulo, descripcion, valor, onCambiar }: Propi
         value={valor}
         onValueChange={onCambiar}
         trackColor={{ false: colores.tinta14, true: colores.tinta }}
-        thumbColor={colores.blanco}
+        thumbColor={colorPerilla}
       />
     </View>
   );

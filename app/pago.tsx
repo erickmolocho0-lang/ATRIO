@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BotonPrimario } from '@/components/common/BotonPrimario';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useCarrito } from '@/hooks/useCarrito';
 import { useCheckout } from '@/hooks/useCheckout';
 import { servicioPedidos } from '@/services/servicioPedidos';
+import { servicioProductos } from '@/services/servicioProductos';
 import { metodosPago } from '@/data/metodosPago';
 import type { MetodoPago } from '@/types';
 
@@ -47,6 +48,14 @@ export default function PantallaPago() {
     }
 
     setPagando(true);
+    try {
+      await servicioProductos.descontarStock(datosPago.items);
+    } catch (error) {
+      setPagando(false);
+      Alert.alert('Sin stock', (error as Error).message);
+      return;
+    }
+
     const pedido = await servicioPedidos.crearPedido({
       ...datosPago,
       usuarioId: usuario.id,

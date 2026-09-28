@@ -70,7 +70,7 @@ export default function PantallaDetallePedido() {
         <View style={styles.seccion}>
           <TituloSeccion texto={`PRODUCTOS (${pedido.items.length})`} />
           {pedido.items.map((item) => (
-            <FilaResumenItem key={`${item.producto.id}-${item.talla}`} item={item} />
+            <FilaResumenItem key={item.varianteId} item={item} />
           ))}
         </View>
 

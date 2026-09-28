@@ -2,6 +2,8 @@ import { categorias } from '@/data/categorias';
 import { colores } from '@/data/colores';
 import { productos as productosSemilla } from '@/data/productos';
 import type { Categoria, ColorProducto, DatosProductoGenerales, Producto, VarianteProducto } from '@/types';
+import type { ItemCarrito } from '@/types';
+import { buscarVariantePorId } from '@/utils/variantes';
 
 // Almacén en memoria (no AsyncStorage: nunca será la fuente oficial del
 // stock). Las tablas `productos`/`variantes_producto` ya existen en Supabase,
@@ -110,5 +112,27 @@ export const servicioProductos = {
     const actualizado: Producto = { ...existente, activo: !existente.activo };
     almacenProductos = almacenProductos.map((p) => (p.id === id ? actualizado : p));
     return actualizado;
+  },
+
+  // --- Pedidos: descontar stock al confirmar la compra (Hans) ---
+
+  // Todo o nada: si una variante no alcanza, no se descuenta ninguna.
+  async descontarStock(items: ItemCarrito[]): Promise<void> {
+    for (const item of items) {
+      const variante = buscarVariantePorId(requerirProducto(item.producto.id), item.varianteId);
+      if (!variante || variante.stock < item.cantidad) {
+        throw new Error(`Ya no hay stock suficiente de ${item.producto.nombre}.`);
+      }
+    }
+
+    for (const item of items) {
+      const producto = requerirProducto(item.producto.id);
+      const variantes = producto.variantes.map((variante) =>
+        variante.id === item.varianteId
+          ? { ...variante, stock: variante.stock - item.cantidad }
+          : variante,
+      );
+      almacenProductos = almacenProductos.map((p) => (p.id === producto.id ? { ...producto, variantes } : p));
+    }
   },
 };

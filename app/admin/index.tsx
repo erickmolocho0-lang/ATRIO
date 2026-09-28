@@ -47,7 +47,7 @@ export default function PantallaDashboardAdmin() {
               />
               <TarjetaIndicador
                 titulo="Stock bajo"
-                valor={`${stockBajo.length} ${stockBajo.length === 1 ? 'producto' : 'productos'}`}
+                valor={`${stockBajo.length} ${stockBajo.length === 1 ? 'variante' : 'variantes'}`}
                 icono="alert-circle-outline"
               />
               <TarjetaIndicador
@@ -76,7 +76,7 @@ export default function PantallaDashboardAdmin() {
               ) : (
                 <View style={[styles.tarjetaLista, { backgroundColor: colores.blanco, borderColor: colores.borde }]}>
                   {stockBajo.map((item) => (
-                    <FilaStockBajo key={item.productoId} item={item} />
+                    <FilaStockBajo key={item.varianteId} item={item} />
                   ))}
                 </View>
               )}

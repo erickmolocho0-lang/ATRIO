@@ -5,6 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BotonPrimario } from '@/components/common/BotonPrimario';
 import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { GaleriaProducto } from '@/components/products/GaleriaProducto';
+import { SelectorColor } from '@/components/products/SelectorColor';
 import { SelectorTalla } from '@/components/products/SelectorTalla';
 import { COLORS } from '@/constants/colors';
 import { ESPACIO, MEDIDAS, TIPOGRAFIA } from '@/constants/theme';
@@ -19,7 +20,13 @@ export default function PantallaDetalleProducto() {
     producto,
     tallaSeleccionada,
     seleccionarTalla,
-    errorTalla,
+    tallasDisponibles,
+    tallasHabilitadas,
+    colorSeleccionado,
+    seleccionarColor,
+    coloresHabilitados,
+    varianteActual,
+    errorSeleccion,
     agregarAlCarrito,
     contadorCarrito,
   } = useDetalleProducto(id ?? '');
@@ -37,7 +44,7 @@ export default function PantallaDetalleProducto() {
     );
   }
 
-  const agotado = producto.stock <= 0;
+  const agotado = Boolean(tallaSeleccionada && colorSeleccionado && (!varianteActual || varianteActual.stock <= 0));
 
   const alPresionarAnadir = () => {
     if (agregarAlCarrito()) router.push('/(tabs)/carrito');
@@ -80,18 +87,35 @@ export default function PantallaDetalleProducto() {
           </View>
 
           <View style={styles.bloqueTalla}>
+            <SelectorColor
+              colores={producto.colores}
+              coloresHabilitados={coloresHabilitados}
+              colorSeleccionado={colorSeleccionado}
+              alSeleccionar={seleccionarColor}
+            />
+          </View>
+
+          <View style={styles.bloqueTalla}>
             <SelectorTalla
-              tallas={producto.tallas}
+              tallas={tallasDisponibles}
+              tallasHabilitadas={tallasHabilitadas}
               tallaSeleccionada={tallaSeleccionada}
               alSeleccionar={seleccionarTalla}
             />
-            {errorTalla ? (
-              <Text style={styles.errorTalla}>Selecciona una talla para continuar.</Text>
+            {errorSeleccion ? (
+              <Text style={styles.errorTalla}>Selecciona talla y color para continuar.</Text>
             ) : null}
           </View>
 
           <View style={styles.informacion}>
-            <FilaInfo etiqueta="STOCK" valor={`${producto.stock} unidades`} />
+            <FilaInfo
+              etiqueta="STOCK"
+              valor={
+                tallaSeleccionada && colorSeleccionado
+                  ? `${varianteActual?.stock ?? 0} unidades`
+                  : 'Elige talla y color'
+              }
+            />
             <FilaInfo etiqueta="ENVÍO" valor="24–48 h Lima" />
             <FilaInfo etiqueta="DEVOLUCIÓN" valor="30 días" />
           </View>

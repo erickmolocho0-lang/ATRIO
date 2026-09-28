@@ -30,12 +30,14 @@ export interface VentaReciente {
   estado: EstadoPedido;
 }
 
-// Modelo real hoy: Producto tiene un `stock` único (no por variante) y
-// `tallas[].disponible` (booleano, sin stock propio). Cuando Yeiner agregue
-// color + stock por variante, este tipo se actualiza sin tocar el resto.
+// Un registro por VARIANTE con stock bajo (no por producto): el modelo real
+// es producto -> variantes[] (talla + color + stock propio).
 export interface ProductoStockBajo {
+  varianteId: string;
   productoId: string;
   nombre: string;
-  tallasDisponibles: string[];
+  talla: string;
+  colorId: string;
+  colorNombre: string;
   stock: number;
 }

@@ -5,9 +5,10 @@ import { ESPACIO, TIPOGRAFIA } from '@/constants/theme';
 import type { ItemCarrito } from '@/types';
 import { formatearSoles } from '@/utils/moneda';
 
-// Único lugar que arma la etiqueta de variante: cuando exista el color, se agrega aquí.
+// Único lugar que arma la etiqueta de variante.
 function etiquetaVariante(item: ItemCarrito): string {
-  return `TALLA ${item.talla}`;
+  const color = item.producto.colores.find((c) => c.id === item.colorId);
+  return `TALLA ${item.talla}${color ? ` · ${color.nombre}` : ''}`;
 }
 
 export function FilaResumenItem({ item }: { item: ItemCarrito }) {

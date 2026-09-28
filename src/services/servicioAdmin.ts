@@ -5,10 +5,8 @@ import type {
   ResumenDashboardAdmin,
   VentaReciente,
 } from '@/types';
-
-// Umbral de stock bajo. Hoy se aplica al stock único de Producto porque el
-// modelo por variante (talla + color + stock) todavía no existe (Yeiner).
-const UMBRAL_STOCK_BAJO = 3;
+import { obtenerColorPorId } from '@/data/colores';
+import { esStockBajo } from '@/utils/variantes';
 
 // TODO(hans-pedidos): reemplazar esta función por servicioPedidos.* cuando
 // exista el módulo real de pedidos/ventas. El resto de este archivo (y el
@@ -21,13 +19,13 @@ async function obtenerPedidosDesdeElModuloDePedidos(): Promise<PedidoReciente[]>
 
 export const servicioAdmin = {
   async obtenerResumenDashboard(): Promise<ResumenDashboardAdmin> {
-    const productos = servicioProductos.obtenerProductos();
+    const productos = await servicioProductos.obtenerProductos();
     const pedidos = await obtenerPedidosDesdeElModuloDePedidos();
 
     const totalVentas = pedidos.reduce((acumulado, pedido) => acumulado + pedido.total, 0);
     const totalPedidos = pedidos.length;
     const ticketPromedio = totalPedidos > 0 ? totalVentas / totalPedidos : 0;
-    const productosActivos = productos.filter((producto) => producto.stock > 0).length;
+    const productosActivos = productos.filter((producto) => producto.activo).length;
     const pedidosPendientes = pedidos.filter(
       (pedido) => pedido.estado === 'preparado' || pedido.estado === 'en_camino',
     ).length;
@@ -44,18 +42,26 @@ export const servicioAdmin = {
   },
 
   async obtenerProductosStockBajo(): Promise<ProductoStockBajo[]> {
-    const productos = servicioProductos.obtenerProductos();
-    return productos
-      .filter((producto) => producto.stock <= UMBRAL_STOCK_BAJO)
-      .map((producto) => ({
-        productoId: producto.id,
-        nombre: producto.nombre,
-        tallasDisponibles: producto.tallas
-          .filter((talla) => talla.disponible)
-          .map((talla) => talla.talla),
-        stock: producto.stock,
-      }))
-      .sort((a, b) => a.stock - b.stock);
+    const productos = await servicioProductos.obtenerProductos();
+    const filas: ProductoStockBajo[] = [];
+
+    for (const producto of productos) {
+      if (!producto.activo) continue;
+      for (const variante of producto.variantes) {
+        if (!esStockBajo(variante.stock)) continue;
+        filas.push({
+          varianteId: variante.id,
+          productoId: producto.id,
+          nombre: producto.nombre,
+          talla: variante.talla,
+          colorId: variante.colorId,
+          colorNombre: obtenerColorPorId(variante.colorId)?.nombre ?? variante.colorId,
+          stock: variante.stock,
+        });
+      }
+    }
+
+    return filas.sort((a, b) => a.stock - b.stock);
   },
 
   async obtenerPedidosRecientes(limite = 5): Promise<PedidoReciente[]> {

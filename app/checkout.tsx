@@ -91,7 +91,7 @@ export default function PantallaCheckout() {
           <TituloSeccion texto={`PRODUCTOS (${items.length})`} />
           <View style={styles.listaProductos}>
             {items.map((item) => (
-              <FilaResumenItem key={`${item.producto.id}-${item.talla}`} item={item} />
+              <FilaResumenItem key={`${item.producto.id}-${item.varianteId}`} item={item} />
             ))}
           </View>
         </View>

@@ -7,6 +7,7 @@ import type {
   ProblemaCheckout,
   Producto,
 } from '@/types';
+import { buscarVariante } from '@/utils/variantes';
 
 export function detectarProblemasSeleccion(
   items: ItemCarrito[],
@@ -43,9 +44,9 @@ export function detectarProblemasCantidad(items: ItemCarrito[]): ProblemaCheckou
 }
 
 /**
- * Validación de stock solo para UX, con el modelo actual (Producto.stock + tallas[].disponible).
- * La validación definitiva se hará en la nube al confirmar la compra.
- * Cuando exista el modelo de variantes, este es el único lugar que hay que cambiar.
+ * Validación de stock solo para UX, sobre el modelo de variantes
+ * (producto.variantes[].stock, por talla+color). La validación definitiva
+ * se hace en la nube al confirmar la compra.
  */
 export function detectarProblemasStock(
   items: ItemCarrito[],
@@ -53,10 +54,10 @@ export function detectarProblemasStock(
 ): ProblemaCheckout[] {
   const problemas: ProblemaCheckout[] = [];
   const avisados = new Set<string>();
-  const pedidoPorProducto = new Map<string, number>();
+  const pedidoPorVariante = new Map<string, number>();
   for (const item of items) {
-    const acumulado = pedidoPorProducto.get(item.producto.id) ?? 0;
-    pedidoPorProducto.set(item.producto.id, acumulado + item.cantidad);
+    const acumulado = pedidoPorVariante.get(item.varianteId) ?? 0;
+    pedidoPorVariante.set(item.varianteId, acumulado + item.cantidad);
   }
 
   const avisar = (clave: string, mensaje: string) => {
@@ -68,25 +69,25 @@ export function detectarProblemasStock(
   for (const item of items) {
     const nombre = item.producto.nombre;
     const actual = productosActuales.get(item.producto.id);
-    if (!actual) {
+    if (!actual || !actual.activo) {
       avisar(`${item.producto.id}:ausente`, `«${nombre}» ya no está disponible.`);
       continue;
     }
-    const talla = actual.tallas.find((t) => t.talla === item.talla);
-    if (!talla || !talla.disponible) {
+    const variante = buscarVariante(actual, item.talla, item.colorId);
+    if (!variante) {
       avisar(
-        `${item.producto.id}:${item.talla}`,
-        `«${nombre}» ya no está disponible en talla ${item.talla}.`,
+        `${item.varianteId}:ausente`,
+        `«${nombre}» (talla ${item.talla}) ya no está disponible.`,
       );
       continue;
     }
-    const pedido = pedidoPorProducto.get(item.producto.id) ?? 0;
-    if (pedido > actual.stock) {
+    const pedido = pedidoPorVariante.get(item.varianteId) ?? 0;
+    if (pedido > variante.stock) {
       avisar(
-        `${item.producto.id}:stock`,
-        actual.stock <= 0
-          ? `«${nombre}» está agotado.`
-          : `Solo quedan ${actual.stock} unidades de «${nombre}».`,
+        `${item.varianteId}:stock`,
+        variante.stock <= 0
+          ? `«${nombre}» (talla ${item.talla}) está agotado.`
+          : `Solo quedan ${variante.stock} unidades de «${nombre}» (talla ${item.talla}).`,
       );
     }
   }

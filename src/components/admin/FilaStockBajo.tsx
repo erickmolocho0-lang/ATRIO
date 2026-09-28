@@ -13,7 +13,7 @@ export function FilaStockBajo({ item }: { item: ProductoStockBajo }) {
           {item.nombre}
         </Text>
         <Text style={[styles.detalle, { color: colores.textoSecundario }]}>
-          Tallas disponibles: {item.tallasDisponibles.join(', ') || '—'}
+          Talla {item.talla} · {item.colorNombre}
         </Text>
       </View>
       <Text style={[styles.stock, { color: colores.arcilla }]}>{item.stock} u.</Text>

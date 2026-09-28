@@ -7,6 +7,7 @@ export type MetodoPago = 'tarjeta' | 'yape' | 'plin' | 'contra_entrega';
 export interface Pedido extends DatosPago {
   numero: string;
   usuarioId: string;
+  cliente: string;
   fecha: string;
   metodoPago: MetodoPago;
   estado: EstadoPedido;

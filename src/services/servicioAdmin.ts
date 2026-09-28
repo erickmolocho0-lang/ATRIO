@@ -7,14 +7,19 @@ import type {
 } from '@/types';
 import { obtenerColorPorId } from '@/data/colores';
 import { esStockBajo } from '@/utils/variantes';
+import { nombreMetodoPago } from '@/data/metodosPago';
+import { servicioPedidos } from './servicioPedidos';
 
-// TODO(hans-pedidos): reemplazar esta función por servicioPedidos.* cuando
-// exista el módulo real de pedidos/ventas. El resto de este archivo (y el
-// Dashboard) solo depende del tipo PedidoReciente/VentaReciente, así que ese
-// cambio no debería tocar ni el hook ni la pantalla.
 async function obtenerPedidosDesdeElModuloDePedidos(): Promise<PedidoReciente[]> {
-  // Sin datos reales todavía: se devuelve vacío en vez de inventar pedidos.
-  return [];
+  const pedidos = await servicioPedidos.obtenerPedidos();
+  return pedidos.map((pedido) => ({
+    id: pedido.numero,
+    numero: pedido.numero,
+    cliente: pedido.cliente,
+    total: pedido.resumen.total,
+    estado: pedido.estado,
+    fecha: pedido.fecha,
+  }));
 }
 
 export const servicioAdmin = {
@@ -72,12 +77,12 @@ export const servicioAdmin = {
   },
 
   async obtenerVentasRecientes(limite = 5): Promise<VentaReciente[]> {
-    const pedidos = await this.obtenerPedidosRecientes(limite);
-    return pedidos.map((pedido) => ({
+    const pedidos = await servicioPedidos.obtenerPedidos();
+    return pedidos.slice(0, limite).map((pedido) => ({
       numeroPedido: pedido.numero,
       fecha: pedido.fecha,
-      total: pedido.total,
-      metodoPago: 'N/D', // depende de Hans (pagos)
+      total: pedido.resumen.total,
+      metodoPago: nombreMetodoPago(pedido.metodoPago),
       estado: pedido.estado,
     }));
   },

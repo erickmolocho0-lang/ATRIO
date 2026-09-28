@@ -114,7 +114,7 @@ export const servicioProductos = {
     return actualizado;
   },
 
-  // --- Pedidos: descontar stock al confirmar la compra (Hans) ---
+  // --- Pedidos: descontar stock al confirmar la compra ----
 
   // Todo o nada: si una variante no alcanza, no se descuenta ninguna.
   async descontarStock(items: ItemCarrito[]): Promise<void> {

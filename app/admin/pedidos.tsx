@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { FilaPedidoReciente } from '@/components/admin/FilaPedidoReciente';
@@ -9,25 +10,25 @@ import { useTema } from '@/hooks/useTema';
 import { servicioAdmin } from '@/services/servicioAdmin';
 import type { PedidoReciente } from '@/types';
 
-// TODO(hans-pedidos): esta pantalla consume PedidoReciente de forma
-// desacoplada (vía servicioAdmin). Cuando exista el módulo real de
-// pedidos/ventas, solo cambia la fuente de datos — no esta UI.
 export default function PantallaPedidosAdmin() {
   const { colores } = useTema();
   const [pedidos, setPedidos] = useState<PedidoReciente[]>([]);
   const [cargando, setCargando] = useState(true);
 
-  useEffect(() => {
-    let cancelado = false;
-    servicioAdmin.obtenerPedidosRecientes(50).then((datos) => {
-      if (cancelado) return;
-      setPedidos(datos);
-      setCargando(false);
-    });
-    return () => {
-      cancelado = true;
-    };
-  }, []);
+  // Recarga al volver del detalle, por si se cambió el estado de un pedido.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelado = false;
+      servicioAdmin.obtenerPedidosRecientes(50).then((datos) => {
+        if (cancelado) return;
+        setPedidos(datos);
+        setCargando(false);
+      });
+      return () => {
+        cancelado = true;
+      };
+    }, []),
+  );
 
   return (
     <SafeAreaView style={[styles.pantalla, { backgroundColor: colores.papel }]} edges={['top']}>
@@ -39,13 +40,18 @@ export default function PantallaPedidosAdmin() {
           <Text style={[styles.estado, { color: colores.textoSecundario }]}>Cargando pedidos…</Text>
         ) : pedidos.length === 0 ? (
           <Text style={[styles.estado, { color: colores.textoSecundario }]}>
-            Aún no hay pedidos registrados. Esta pantalla ya está conectada al servicio de datos;
-            se completará cuando el módulo de pedidos (Hans) empiece a generarlos.
+            Aún no hay pedidos registrados.
           </Text>
         ) : (
           <View style={[styles.tarjetaLista, { backgroundColor: colores.blanco, borderColor: colores.borde }]}>
             {pedidos.map((pedido) => (
-              <FilaPedidoReciente key={pedido.id} pedido={pedido} />
+              <Pressable
+                key={pedido.id}
+                onPress={() => router.push({ pathname: '/pedido/[numero]', params: { numero: pedido.numero } })}
+                accessibilityRole="button"
+              >
+                <FilaPedidoReciente pedido={pedido} />
+              </Pressable>
             ))}
           </View>
         )}

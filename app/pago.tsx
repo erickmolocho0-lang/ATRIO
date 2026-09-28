@@ -59,11 +59,14 @@ export default function PantallaPago() {
     const pedido = await servicioPedidos.crearPedido({
       ...datosPago,
       usuarioId: usuario.id,
+      cliente: usuario.nombre,
       metodoPago,
     });
     vaciarCarrito();
     reiniciarCheckout();
-    router.replace({ pathname: '/confirmacion', params: { numero: pedido.numero } });
+    // Cierra Checkout y Pago: terminada la compra, "atrás" ya no vuelve a ellos.
+    router.dismissAll();
+    router.push({ pathname: '/confirmacion', params: { numero: pedido.numero } });
   }
 
   return (

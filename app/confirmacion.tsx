@@ -76,7 +76,12 @@ export default function PantallaConfirmacion() {
       </View>
 
       <View style={[styles.botones, { paddingBottom: insets.bottom + ESPACIO.md }]}>
-        <BotonPrimario texto="VER MI PEDIDO" onPress={() => router.replace('/pedidos')} />
+        <BotonPrimario
+          texto="VER MI PEDIDO"
+          onPress={() =>
+            router.replace({ pathname: '/pedido/[numero]', params: { numero: pedido.numero } })
+          }
+        />
         <BotonPrimario
           texto="SEGUIR COMPRANDO"
           variante="contorno"

@@ -1,16 +1,17 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { COLORS } from '@/constants/colors';
 import { ESPACIO, RADIO, TIPOGRAFIA } from '@/constants/theme';
-import type { TallaProducto } from '@/types';
 
 interface PropiedadesSelectorTalla {
-  tallas: TallaProducto[];
+  tallas: string[];
+  tallasHabilitadas: string[];
   tallaSeleccionada: string | null;
   alSeleccionar: (talla: string) => void;
 }
 
 export function SelectorTalla({
   tallas,
+  tallasHabilitadas,
   tallaSeleccionada,
   alSeleccionar,
 }: PropiedadesSelectorTalla) {
@@ -18,7 +19,8 @@ export function SelectorTalla({
     <View>
       <Text style={styles.etiqueta}>TALLA</Text>
       <View style={styles.opciones}>
-        {tallas.map(({ talla, disponible }) => {
+        {tallas.map((talla) => {
+          const disponible = tallasHabilitadas.includes(talla);
           const seleccionada = talla === tallaSeleccionada;
           return (
             <Pressable

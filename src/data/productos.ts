@@ -1,13 +1,42 @@
-import type { Producto } from '@/types';
+import { obtenerColorPorId } from '@/data/colores';
+import type { ColorProducto, Producto, VarianteProducto } from '@/types';
+import { idVariante } from '@/utils/variantes';
 
-const TALLAS_ROPA = ['XS', 'S', 'M', 'L', 'XL'];
+type StockPorTallaColor = Record<string, Record<string, number>>;
 
-function tallas(disponibles: string[]) {
-  return TALLAS_ROPA.map((talla) => ({ talla, disponible: disponibles.includes(talla) }));
+function variantes(productoId: string, stockPorTallaColor: StockPorTallaColor): VarianteProducto[] {
+  const resultado: VarianteProducto[] = [];
+  for (const talla of Object.keys(stockPorTallaColor)) {
+    for (const colorId of Object.keys(stockPorTallaColor[talla])) {
+      resultado.push({
+        id: idVariante(productoId, talla, colorId),
+        talla,
+        colorId,
+        stock: stockPorTallaColor[talla][colorId],
+      });
+    }
+  }
+  return resultado;
+}
+
+function coloresDe(variantesProducto: VarianteProducto[]): ColorProducto[] {
+  const ids = [...new Set(variantesProducto.map((v) => v.colorId))];
+  return ids
+    .map((id) => obtenerColorPorId(id))
+    .filter((color): color is ColorProducto => color !== undefined);
+}
+
+function producto(
+  datos: Omit<Producto, 'colores' | 'variantes' | 'activo'> & {
+    variantes: VarianteProducto[];
+    activo?: boolean;
+  },
+): Producto {
+  return { ...datos, activo: datos.activo ?? true, colores: coloresDe(datos.variantes) };
 }
 
 export const productos: Producto[] = [
-  {
+  producto({
     id: 'at-co-014',
     sku: 'AT-CO-014',
     nombre: 'Abrigo trench arena',
@@ -20,14 +49,18 @@ export const productos: Producto[] = [
     confeccion: 'Confección: cosido y ensamblado en taller propio.',
     origen: 'Origen: Lima, Perú.',
     imagenes: [],
-    tallas: tallas(['XS', 'S', 'M', 'L']),
-    stock: 12,
+    variantes: variantes('at-co-014', {
+      XS: { arena: 2, tinta: 0 },
+      S: { arena: 3, tinta: 2 },
+      M: { arena: 3, tinta: 1 },
+      L: { arena: 1, tinta: 0 },
+    }),
     etiquetas: ['NUEVO'],
     esNovedad: true,
     popularidad30d: 184,
     fechaAlta: '2026-08-28',
-  },
-  {
+  }),
+  producto({
     id: 'at-co-021',
     sku: 'AT-CO-021',
     nombre: 'Blazer estructurado tinta',
@@ -40,14 +73,17 @@ export const productos: Producto[] = [
     confeccion: 'Confección: entretela termoadhesiva y pespuntes reforzados.',
     origen: 'Origen: Lima, Perú.',
     imagenes: [],
-    tallas: tallas(['S', 'M', 'XL']),
-    stock: 4,
+    variantes: variantes('at-co-021', {
+      S: { tinta: 1, negro: 0 },
+      M: { tinta: 2, negro: 1 },
+      XL: { tinta: 0, negro: 0 },
+    }),
     etiquetas: ['ÚLTIMAS'],
     esNovedad: false,
     popularidad30d: 96,
     fechaAlta: '2026-07-15',
-  },
-  {
+  }),
+  producto({
     id: 'at-ca-007',
     sku: 'AT-CA-007',
     nombre: 'Camisa popelín blanca',
@@ -60,14 +96,19 @@ export const productos: Producto[] = [
     confeccion: 'Confección: costuras francesas en los laterales.',
     origen: 'Origen: Pisco, Perú.',
     imagenes: [],
-    tallas: tallas(['XS', 'S', 'M', 'L', 'XL']),
-    stock: 27,
+    variantes: variantes('at-ca-007', {
+      XS: { blanco: 3, crudo: 2 },
+      S: { blanco: 4, crudo: 3 },
+      M: { blanco: 5, crudo: 3 },
+      L: { blanco: 3, crudo: 2 },
+      XL: { blanco: 1, crudo: 1 },
+    }),
     etiquetas: ['NUEVO'],
     esNovedad: true,
     popularidad30d: 152,
     fechaAlta: '2026-08-20',
-  },
-  {
+  }),
+  producto({
     id: 'at-ca-012',
     sku: 'AT-CA-012',
     nombre: 'Camisa oversize lino',
@@ -81,14 +122,17 @@ export const productos: Producto[] = [
     confeccion: 'Confección: lavado enzimático para un tacto suave.',
     origen: 'Origen: Arequipa, Perú.',
     imagenes: [],
-    tallas: tallas(['S', 'M', 'L']),
-    stock: 9,
+    variantes: variantes('at-ca-012', {
+      S: { crudo: 2, arena: 1 },
+      M: { crudo: 2, arena: 2 },
+      L: { crudo: 1, arena: 1 },
+    }),
     etiquetas: ['-15%'],
     esNovedad: false,
     popularidad30d: 121,
     fechaAlta: '2026-06-30',
-  },
-  {
+  }),
+  producto({
     id: 'at-de-003',
     sku: 'AT-DE-003',
     nombre: 'Jean recto crudo',
@@ -101,14 +145,18 @@ export const productos: Producto[] = [
     confeccion: 'Confección: remaches de cobre y costuras a contraste.',
     origen: 'Origen: Lima, Perú.',
     imagenes: [],
-    tallas: tallas(['S', 'M', 'L', 'XL']),
-    stock: 18,
+    variantes: variantes('at-de-003', {
+      S: { crudo: 3, negro: 2 },
+      M: { crudo: 4, negro: 3 },
+      L: { crudo: 3, negro: 2 },
+      XL: { crudo: 1, negro: 0 },
+    }),
     etiquetas: ['NUEVO'],
     esNovedad: true,
     popularidad30d: 143,
     fechaAlta: '2026-08-12',
-  },
-  {
+  }),
+  producto({
     id: 'at-ve-009',
     sku: 'AT-VE-009',
     nombre: 'Vestido midi plisado',
@@ -121,14 +169,17 @@ export const productos: Producto[] = [
     confeccion: 'Confección: plisado fijado al calor.',
     origen: 'Origen: Lima, Perú.',
     imagenes: [],
-    tallas: tallas(['XS', 'S', 'M']),
-    stock: 3,
+    variantes: variantes('at-ve-009', {
+      XS: { negro: 1, terracota: 0 },
+      S: { negro: 1, terracota: 1 },
+      M: { negro: 0, terracota: 0 },
+    }),
     etiquetas: ['ÚLTIMAS'],
     esNovedad: false,
     popularidad30d: 88,
     fechaAlta: '2026-05-22',
-  },
-  {
+  }),
+  producto({
     id: 'at-pu-005',
     sku: 'AT-PU-005',
     nombre: 'Jersey lana merino',
@@ -141,14 +192,18 @@ export const productos: Producto[] = [
     confeccion: 'Confección: tejido tubular sin costuras laterales.',
     origen: 'Origen: Puno, Perú.',
     imagenes: [],
-    tallas: tallas(['S', 'M', 'L', 'XL']),
-    stock: 15,
+    variantes: variantes('at-pu-005', {
+      S: { oliva: 2, crudo: 2 },
+      M: { oliva: 3, crudo: 3 },
+      L: { oliva: 2, crudo: 2 },
+      XL: { oliva: 1, crudo: 0 },
+    }),
     etiquetas: ['NUEVO'],
     esNovedad: true,
     popularidad30d: 167,
     fechaAlta: '2026-08-25',
-  },
-  {
+  }),
+  producto({
     id: 'at-fa-002',
     sku: 'AT-FA-002',
     nombre: 'Falda pana camel',
@@ -162,11 +217,14 @@ export const productos: Producto[] = [
     confeccion: 'Confección: forro de raso en el cuerpo.',
     origen: 'Origen: Lima, Perú.',
     imagenes: [],
-    tallas: tallas(['XS', 'S', 'L']),
-    stock: 7,
+    variantes: variantes('at-fa-002', {
+      XS: { arena: 1, terracota: 1 },
+      S: { arena: 2, terracota: 1 },
+      L: { arena: 1, terracota: 1 },
+    }),
     etiquetas: ['-15%'],
     esNovedad: false,
     popularidad30d: 74,
     fechaAlta: '2026-07-02',
-  },
+  }),
 ];

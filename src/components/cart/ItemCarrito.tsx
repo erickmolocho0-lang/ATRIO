@@ -5,6 +5,7 @@ import { ESPACIO, TIPOGRAFIA } from '@/constants/theme';
 import { CANTIDAD_MAXIMA, CANTIDAD_MINIMA } from '@/context/CarritoContext';
 import type { ItemCarrito } from '@/types';
 import { formatearSoles } from '@/utils/moneda';
+import { buscarVariantePorId } from '@/utils/variantes';
 import { MarcadorImagenProducto } from '@/components/products/MarcadorImagenProducto';
 
 interface PropiedadesFilaItemCarrito {
@@ -18,8 +19,11 @@ export function FilaItemCarrito({
   alCambiarCantidad,
   alEliminar,
 }: PropiedadesFilaItemCarrito) {
-  const { producto, talla, cantidad } = item;
+  const { producto, talla, colorId, cantidad } = item;
   const importeLinea = producto.precio * cantidad;
+  const nombreColor = producto.colores.find((color) => color.id === colorId)?.nombre ?? colorId;
+  const colorHex = producto.colores.find((color) => color.id === colorId)?.hex;
+  const tope = Math.min(CANTIDAD_MAXIMA, buscarVariantePorId(producto, item.varianteId)?.stock ?? CANTIDAD_MAXIMA);
 
   return (
     <View style={styles.contenedor}>
@@ -42,7 +46,12 @@ export function FilaItemCarrito({
           </Pressable>
         </View>
 
-        <Text style={styles.talla}>TALLA {talla}</Text>
+        <View style={styles.filaVariante}>
+          {colorHex ? <View style={[styles.swatch, { backgroundColor: colorHex }]} /> : null}
+          <Text style={styles.talla}>
+            TALLA {talla} · {nombreColor}
+          </Text>
+        </View>
 
         <View style={styles.filaInferior}>
           <View style={styles.control}>
@@ -63,15 +72,11 @@ export function FilaItemCarrito({
             <Pressable
               style={styles.botonControl}
               onPress={() => alCambiarCantidad(cantidad + 1)}
-              disabled={cantidad >= CANTIDAD_MAXIMA}
+              disabled={cantidad >= tope}
               accessibilityRole="button"
               accessibilityLabel="Aumentar cantidad"
             >
-              <Ionicons
-                name="add"
-                size={16}
-                color={cantidad >= CANTIDAD_MAXIMA ? COLORS.tinta40 : COLORS.tinta}
-              />
+              <Ionicons name="add" size={16} color={cantidad >= tope ? COLORS.tinta40 : COLORS.tinta} />
             </Pressable>
           </View>
 
@@ -99,8 +104,14 @@ const styles = StyleSheet.create({
     gap: ESPACIO.sm,
   },
   nombre: { flex: 1, fontFamily: TIPOGRAFIA.cuerpo, fontSize: 13, color: COLORS.tinta },
-  talla: {
+  filaVariante: {
     marginTop: ESPACIO.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ESPACIO.xs,
+  },
+  swatch: { width: 10, height: 10, borderRadius: 5, borderWidth: 1, borderColor: COLORS.borde },
+  talla: {
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 11,
     color: COLORS.tinta50,

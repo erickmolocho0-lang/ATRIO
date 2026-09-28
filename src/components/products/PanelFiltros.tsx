@@ -1,9 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '@/constants/colors';
 import { ESPACIO, MEDIDAS, TIPOGRAFIA } from '@/constants/theme';
 import type { FiltrosCatalogo, OrdenCatalogo } from '@/hooks/useCatalogo';
+import { servicioProductos } from '@/services/servicioProductos';
+import type { ColorProducto } from '@/types';
 import { BotonPrimario } from '@/components/common/BotonPrimario';
 
 interface PropiedadesPanelFiltros {
@@ -37,6 +40,20 @@ export function PanelFiltros({
   alCambiarFiltros,
   alReiniciar,
 }: PropiedadesPanelFiltros) {
+  const [colores, setColores] = useState<ColorProducto[]>([]);
+
+  useEffect(() => {
+    servicioProductos.obtenerColores().then(setColores);
+  }, []);
+
+  const alternarColor = (colorId: string) => {
+    const yaActivo = filtros.colores.includes(colorId);
+    alCambiarFiltros({
+      ...filtros,
+      colores: yaActivo ? filtros.colores.filter((id) => id !== colorId) : [...filtros.colores, colorId],
+    });
+  };
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={alCerrar}>
       <View style={styles.fondo}>
@@ -83,6 +100,32 @@ export function PanelFiltros({
               />
             </Pressable>
           ))}
+
+          <Text style={styles.seccion}>COLOR</Text>
+          <View style={styles.colores}>
+            {colores.map((color) => {
+              const activo = filtros.colores.includes(color.id);
+              return (
+                <Pressable
+                  key={color.id}
+                  style={styles.colorOpcion}
+                  onPress={() => alternarColor(color.id)}
+                  accessibilityRole="checkbox"
+                  accessibilityLabel={color.nombre}
+                  accessibilityState={{ checked: activo }}
+                >
+                  <View
+                    style={[
+                      styles.swatch,
+                      { backgroundColor: color.hex },
+                      activo && styles.swatchActivo,
+                    ]}
+                  />
+                  <Text style={styles.colorTexto}>{color.nombre}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
 
           <View style={[styles.opcion, styles.opcionSwitch]}>
             <Text style={styles.opcionTexto}>Solo disponibles</Text>
@@ -145,6 +188,22 @@ const styles = StyleSheet.create({
   },
   opcionSwitch: { marginTop: ESPACIO.sm },
   opcionTexto: { fontFamily: TIPOGRAFIA.cuerpo, fontSize: 14, color: COLORS.tinta },
+  colores: { flexDirection: 'row', flexWrap: 'wrap', gap: ESPACIO.md, paddingVertical: ESPACIO.xs },
+  colorOpcion: { alignItems: 'center', gap: ESPACIO.xs, width: 48 },
+  swatch: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.borde,
+  },
+  swatchActivo: { borderWidth: 2, borderColor: COLORS.tinta },
+  colorTexto: {
+    fontFamily: TIPOGRAFIA.mono,
+    fontSize: 9,
+    color: COLORS.tinta,
+    textAlign: 'center',
+  },
   acciones: { flexDirection: 'row', gap: ESPACIO.md, marginTop: ESPACIO.lg, marginBottom: ESPACIO.md },
   accion: { flex: 1 },
 });

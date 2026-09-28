@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { servicioProductos } from '@/services/servicioProductos';
 import type { Producto } from '@/types';
+import { stockTotal } from '@/utils/variantes';
 
 export type OrdenCatalogo = 'novedad' | 'precio' | 'popularidad';
 
@@ -31,7 +32,22 @@ export function useCatalogo({ categoriaInicial = 'todo' }: OpcionesUseCatalogo =
   const [filtros, setFiltros] = useState<FiltrosCatalogo>(FILTROS_INICIALES);
   const [pagina, setPagina] = useState(1);
 
-  const todos = servicioProductos.obtenerProductos();
+  const [todos, setTodos] = useState<Producto[]>([]);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    let cancelado = false;
+    setCargando(true);
+    servicioProductos.obtenerProductos().then((productos) => {
+      if (!cancelado) {
+        setTodos(productos);
+        setCargando(false);
+      }
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
 
   const productosFiltrados = useMemo<Producto[]>(() => {
     const termino = terminoBusqueda.trim().toLowerCase();
@@ -45,11 +61,17 @@ export function useCatalogo({ categoriaInicial = 'todo' }: OpcionesUseCatalogo =
       ) {
         return false;
       }
-      if (filtros.soloDisponibles && producto.stock <= 0) return false;
+      if (filtros.soloDisponibles && stockTotal(producto) <= 0) return false;
       if (filtros.precioMax != null && producto.precio > filtros.precioMax) return false;
       if (
         filtros.tallas.length > 0 &&
-        !producto.tallas.some((t) => t.disponible && filtros.tallas.includes(t.talla))
+        !producto.variantes.some((v) => v.stock > 0 && filtros.tallas.includes(v.talla))
+      ) {
+        return false;
+      }
+      if (
+        filtros.colores.length > 0 &&
+        !producto.variantes.some((v) => v.stock > 0 && filtros.colores.includes(v.colorId))
       ) {
         return false;
       }
@@ -86,5 +108,6 @@ export function useCatalogo({ categoriaInicial = 'todo' }: OpcionesUseCatalogo =
     contadorResultados: productosFiltrados.length,
     hayMas,
     cargarMas: () => setPagina((actual) => actual + 1),
+    cargando,
   };
 }

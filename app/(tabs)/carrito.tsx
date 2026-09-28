@@ -50,7 +50,7 @@ export default function PantallaCarrito() {
         <>
           <FlatList
             data={items}
-            keyExtractor={(item) => `${item.producto.id}-${item.talla}`}
+            keyExtractor={(item) => `${item.producto.id}-${item.varianteId}`}
             contentContainerStyle={styles.lista}
             ItemSeparatorComponent={() => <View style={styles.separador} />}
             showsVerticalScrollIndicator={false}
@@ -58,9 +58,9 @@ export default function PantallaCarrito() {
               <FilaItemCarrito
                 item={item}
                 alCambiarCantidad={(cantidad) =>
-                  cambiarCantidad(item.producto.id, item.talla, cantidad)
+                  cambiarCantidad(item.producto.id, item.varianteId, cantidad)
                 }
-                alEliminar={() => quitarItem(item.producto.id, item.talla)}
+                alEliminar={() => quitarItem(item.producto.id, item.varianteId)}
               />
             )}
             ListFooterComponent={

@@ -2,6 +2,10 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useConfiguracion } from '@/hooks/useConfiguracion';
+import {
+  ErrorConfirmacionPendiente,
+  ErrorCredencialesInvalidas,
+} from '@/services/servicioAutenticacion';
 import { CLAVES_ALMACENAMIENTO, servicioAlmacenamiento } from '@/services/storageService';
 import { servicioBiometria } from '@/services/servicioBiometria';
 
@@ -132,22 +136,29 @@ export function useInicioSesion(): EstadoInicioSesion {
       await servicioAlmacenamiento.eliminarDato(CLAVES_ALMACENAMIENTO.bloqueoInicioSesion);
       setIntentos(0);
       router.replace(usuario.rol === 'administrador' ? '/admin' : '/(tabs)');
-    } catch {
-      const siguiente = intentos + 1;
-      if (siguiente >= INTENTOS_MAXIMOS) {
-        const hasta = Date.now() + DURACION_BLOQUEO_MS;
-        setIntentos(0);
-        setBloqueadoHasta(hasta);
-        setAhora(Date.now());
-        await servicioAlmacenamiento.guardarDato(CLAVES_ALMACENAMIENTO.intentosInicioSesion, 0);
-        await servicioAlmacenamiento.guardarDato(CLAVES_ALMACENAMIENTO.bloqueoInicioSesion, hasta);
+    } catch (error) {
+      if (error instanceof ErrorCredencialesInvalidas) {
+        const siguiente = intentos + 1;
+        if (siguiente >= INTENTOS_MAXIMOS) {
+          const hasta = Date.now() + DURACION_BLOQUEO_MS;
+          setIntentos(0);
+          setBloqueadoHasta(hasta);
+          setAhora(Date.now());
+          await servicioAlmacenamiento.guardarDato(CLAVES_ALMACENAMIENTO.intentosInicioSesion, 0);
+          await servicioAlmacenamiento.guardarDato(CLAVES_ALMACENAMIENTO.bloqueoInicioSesion, hasta);
+        } else {
+          setIntentos(siguiente);
+          setMensajeError('Correo o contraseña incorrectos.');
+          await servicioAlmacenamiento.guardarDato(
+            CLAVES_ALMACENAMIENTO.intentosInicioSesion,
+            siguiente,
+          );
+        }
+      } else if (error instanceof ErrorConfirmacionPendiente) {
+        setMensajeError('Confirma tu correo antes de iniciar sesión.');
       } else {
-        setIntentos(siguiente);
-        setMensajeError('Correo o contraseña incorrectos.');
-        await servicioAlmacenamiento.guardarDato(
-          CLAVES_ALMACENAMIENTO.intentosInicioSesion,
-          siguiente,
-        );
+        console.error('useInicioSesion: no se pudo completar el inicio de sesión.', error);
+        setMensajeError('No se pudo iniciar sesión. Revisa tu conexión e inténtalo de nuevo.');
       }
     } finally {
       setCargando(false);

@@ -10,6 +10,7 @@ const ITEMS = [
   { ruta: '/admin/productos', etiqueta: 'Productos', icono: 'shirt-outline' },
   { ruta: '/admin/pedidos', etiqueta: 'Pedidos', icono: 'receipt-outline' },
   { ruta: '/admin/reportes', etiqueta: 'Reportes', icono: 'bar-chart-outline' },
+  { ruta: '/admin/entregas', etiqueta: 'Delivery', icono: 'bicycle-outline' },
 ] as const;
 
 // Navegación principal del panel admin. Se monta en cada pantalla de

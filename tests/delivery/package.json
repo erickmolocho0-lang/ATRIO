@@ -1,0 +1,7 @@
+{
+  "name": "atrio-delivery-tests",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node delivery.test.mjs" },
+  "devDependencies": { "@electric-sql/pglite": "0.5.13" }
+}

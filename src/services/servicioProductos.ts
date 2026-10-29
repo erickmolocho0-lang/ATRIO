@@ -33,6 +33,18 @@ function generarIdProducto(nombre: string): string {
   return `${base || 'producto'}-${Date.now().toString(36)}`;
 }
 
+export interface VarianteRetirada {
+  talla: string;
+  colorId: string;
+  colorNombre: string;
+}
+
+export interface ResultadoGuardarProducto {
+  producto: Producto;
+  /** Variantes quitadas en el formulario que tenían historial: quedaron con stock 0 en vez de borrarse. */
+  variantesRetiradas: VarianteRetirada[];
+}
+
 export const PRODUCTOS_POR_PAGINA = 20;
 
 export interface OpcionesPaginaCatalogo {
@@ -248,64 +260,22 @@ export const servicioProductos = {
     return data.publicUrl;
   },
 
-  async crearProducto(
+  /**
+   * Crea o edita un producto completo (datos, variantes con stock e imágenes)
+   * en una sola transacción, con la función SQL `guardar_producto`: si algo
+   * falla, no queda nada a medias. Sin `idExistente` crea uno nuevo.
+   */
+  async guardarProducto(
     datos: DatosProductoGenerales & { variantes: VarianteProducto[]; imagenes: string[] },
-  ): Promise<Producto> {
+    idExistente?: string,
+  ): Promise<ResultadoGuardarProducto> {
     const cliente = requerirSupabase();
-    const id = generarIdProducto(datos.nombre);
+    const id = idExistente ?? generarIdProducto(datos.nombre);
 
-    const { error: errorProducto } = await cliente.from('productos').insert({
-      id,
-      sku: datos.sku,
-      nombre: datos.nombre,
-      categoria_id: datos.categoriaId,
-      precio: datos.precio,
-      precio_anterior: datos.precioAnterior ?? null,
-      descripcion: datos.descripcion,
-      composicion: datos.composicion,
-      confeccion: datos.confeccion,
-      origen: datos.origen,
-      etiquetas: datos.etiquetas,
-      es_novedad: datos.esNovedad,
-      popularidad_30d: 0,
-      fecha_alta: new Date().toISOString().slice(0, 10),
-      activo: true,
-    });
-    if (errorProducto) {
-      if (errorProducto.code === '23505') {
-        throw new Error(`Ya existe un producto con el SKU "${datos.sku}".`);
-      }
-      throw new Error(`No se pudo crear el producto: ${errorProducto.message}`);
-    }
-
-    if (datos.variantes.length > 0) {
-      const { error: errorVariantes } = await cliente.from('variantes_producto').insert(
-        datos.variantes.map((v) => ({ producto_id: id, talla: v.talla, color_id: v.colorId, stock: v.stock })),
-      );
-      if (errorVariantes) {
-        throw new Error(`El producto se creó, pero no se pudieron guardar las variantes: ${errorVariantes.message}`);
-      }
-    }
-
-    if (datos.imagenes.length > 0) {
-      const { error: errorImagenes } = await cliente.from('imagenes_producto').insert(
-        datos.imagenes.map((url, orden) => ({ producto_id: id, url, orden })),
-      );
-      if (errorImagenes) {
-        throw new Error(`El producto se creó, pero no se pudieron guardar las fotos: ${errorImagenes.message}`);
-      }
-    }
-
-    const creado = await obtenerProductoPorIdInterno(id);
-    if (!creado) throw new Error('El producto se creó pero no se pudo volver a leer.');
-    return creado;
-  },
-
-  async actualizarProducto(id: string, datos: DatosProductoGenerales): Promise<Producto> {
-    const cliente = requerirSupabase();
-    const { error } = await cliente
-      .from('productos')
-      .update({
+    const { data, error } = await cliente.rpc('guardar_producto', {
+      p_producto: {
+        id,
+        sku: datos.sku,
         nombre: datos.nombre,
         categoria_id: datos.categoriaId,
         precio: datos.precio,
@@ -316,103 +286,32 @@ export const servicioProductos = {
         origen: datos.origen,
         etiquetas: datos.etiquetas,
         es_novedad: datos.esNovedad,
-      })
-      .eq('id', id);
-    if (error) throw new Error(`No se pudo actualizar el producto: ${error.message}`);
-
-    const actualizado = await obtenerProductoPorIdInterno(id);
-    if (!actualizado) throw new Error(`El producto "${id}" no existe.`);
-    return actualizado;
-  },
-
-  async actualizarVariantesEImagenes(
-    id: string,
-    variantes: VarianteProducto[],
-    imagenes: string[],
-  ): Promise<Producto> {
-    const cliente = requerirSupabase();
-    const { data: usuarioActual } = await cliente.auth.getUser();
-    const creadoPor = usuarioActual.user?.id ?? null;
-
-    const { data: existentes, error: errorLectura } = await cliente
-      .from('variantes_producto')
-      .select('id, talla, color_id, stock')
-      .eq('producto_id', id);
-    if (errorLectura) throw new Error(`No se pudieron leer las variantes actuales: ${errorLectura.message}`);
-
-    const clave = (talla: string, colorId: string) => `${talla}__${colorId}`;
-    const mapaExistentes = new Map(
-      ((existentes ?? []) as { id: string; talla: string; color_id: string; stock: number }[]).map((v) => [
-        clave(v.talla, v.color_id),
-        v,
-      ]),
-    );
-    const clavesNuevas = new Set(variantes.map((v) => clave(v.talla, v.colorId)));
-    const movimientos: { variante_id: string; tipo: 'ingreso' | 'ajuste'; cantidad: number; creado_por: string | null }[] = [];
-
-    for (const variante of variantes) {
-      const existente = mapaExistentes.get(clave(variante.talla, variante.colorId));
-      if (!existente) {
-        const { data: creada, error } = await cliente
-          .from('variantes_producto')
-          .insert({ producto_id: id, talla: variante.talla, color_id: variante.colorId, stock: variante.stock })
-          .select('id')
-          .single();
-        if (error) throw new Error(`No se pudo crear la variante ${variante.talla}/${variante.colorId}: ${error.message}`);
-        if (variante.stock > 0) {
-          movimientos.push({ variante_id: (creada as { id: string }).id, tipo: 'ingreso', cantidad: variante.stock, creado_por: creadoPor });
-        }
-      } else if (existente.stock !== variante.stock) {
-        const { error } = await cliente
-          .from('variantes_producto')
-          .update({ stock: variante.stock })
-          .eq('id', existente.id);
-        if (error) throw new Error(`No se pudo actualizar el stock de ${variante.talla}/${variante.colorId}: ${error.message}`);
-        movimientos.push({
-          variante_id: existente.id,
-          tipo: 'ajuste',
-          cantidad: variante.stock - existente.stock,
-          creado_por: creadoPor,
-        });
+      },
+      p_variantes: datos.variantes.map((v) => ({ talla: v.talla, color_id: v.colorId, stock: v.stock })),
+      p_imagenes: datos.imagenes,
+    });
+    if (error) {
+      if (error.code === '23505' && error.message.includes('sku')) {
+        throw new Error(`Ya existe un producto con el SKU "${datos.sku}".`);
       }
+      throw new Error(`No se pudo guardar el producto: ${error.message}`);
     }
 
-    const idsAEliminar = [...mapaExistentes.entries()]
-      .filter(([claveExistente]) => !clavesNuevas.has(claveExistente))
-      .map(([, v]) => v.id);
-    if (idsAEliminar.length > 0) {
-      const { error: errorEliminar } = await cliente.from('variantes_producto').delete().in('id', idsAEliminar);
-      if (errorEliminar) {
-        throw new Error(
-          `No se pudieron quitar algunas variantes (puede que ya tengan pedidos asociados): ${errorEliminar.message}`,
-        );
-      }
-    }
+    const respuesta = data as {
+      id: string;
+      variantes_retiradas: { talla: string; color_id: string; color_nombre: string }[] | null;
+    };
+    const producto = await obtenerProductoPorIdInterno(respuesta.id);
+    if (!producto) throw new Error('El producto se guardó pero no se pudo volver a leer.');
 
-    if (movimientos.length > 0) {
-      const { error: errorMovimientos } = await cliente.from('movimientos_stock').insert(
-        movimientos.map((m) => ({ variante_id: m.variante_id, tipo: m.tipo, cantidad: m.cantidad, creado_por: m.creado_por })),
-      );
-      if (errorMovimientos) console.error('No se pudo registrar el movimiento de stock.', errorMovimientos);
-    }
-
-    const { error: errorBorrarImagenes } = await cliente
-      .from('imagenes_producto')
-      .delete()
-      .eq('producto_id', id);
-    if (errorBorrarImagenes) {
-      throw new Error(`No se pudieron actualizar las fotos: ${errorBorrarImagenes.message}`);
-    }
-    if (imagenes.length > 0) {
-      const { error: errorImagenes } = await cliente.from('imagenes_producto').insert(
-        imagenes.map((url, orden) => ({ producto_id: id, url, orden })),
-      );
-      if (errorImagenes) throw new Error(`No se pudieron guardar las fotos: ${errorImagenes.message}`);
-    }
-
-    const actualizado = await obtenerProductoPorIdInterno(id);
-    if (!actualizado) throw new Error(`El producto "${id}" no existe.`);
-    return actualizado;
+    return {
+      producto,
+      variantesRetiradas: (respuesta.variantes_retiradas ?? []).map((v) => ({
+        talla: v.talla,
+        colorId: v.color_id,
+        colorNombre: v.color_nombre,
+      })),
+    };
   },
 
   // Dos viajes en vez de tres: se lee solo la columna `activo` y el update

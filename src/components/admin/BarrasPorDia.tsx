@@ -5,10 +5,11 @@ import { useTema } from '@/hooks/useTema';
 import type { VentaDiaria } from '@/types';
 
 const ALTO_MAXIMO = 96;
+const MAXIMO_DIAS = 31;
 
 export function BarrasPorDia({ datos }: { datos: VentaDiaria[] }) {
   const { colores } = useTema();
-  const recientes = datos.slice(-14);
+  const recientes = datos.slice(-MAXIMO_DIAS);
   const maximo = Math.max(...recientes.map((d) => d.total), 1);
 
   return (

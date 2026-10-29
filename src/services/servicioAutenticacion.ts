@@ -60,7 +60,12 @@ export const servicioAutenticacion = {
       email: correo.trim(),
       password: contrasena,
     });
-    if (error || !data.user) throw new ErrorCredencialesInvalidas();
+    if (error?.code === 'invalid_credentials' || error?.code === 'user_not_found') {
+      throw new ErrorCredencialesInvalidas();
+    }
+    if (error?.code === 'email_not_confirmed') throw new ErrorConfirmacionPendiente();
+    if (error) throw error;
+    if (!data.user) throw new Error('Supabase no devolvió un usuario tras iniciar sesión.');
 
     // Un login manual con correo/contraseña siempre es una sesión nueva de
     // verdad: si había un bloqueo local de una cuenta anterior, ya no aplica.

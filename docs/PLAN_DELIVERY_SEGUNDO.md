@@ -61,7 +61,7 @@ Segundo confirmo la aplicacion manual en Supabase mediante resultado correcto y 
 
 TypeScript correcto, 26 comprobaciones locales en PostgreSQL mediante PGlite 0.5.13 y exportacion web correcta, incluida /admin/entregas. Las pruebas cubren administracion autorizada, lecturas publicas, rechazo de escrituras por clientes, validaciones monetarias y guardado atomico.
 
-La validacion en Supabase y las pruebas con una cuenta administradora real de la app siguen pendientes. Los pasos estan en docs/DELIVERY.md.
+Segundo comprobo mediante capturas la lectura de Delivery y el guardado de La Palma desde la version web local con una cuenta administradora real, conservando zona inactiva y tarifas vacias. La app mostro la confirmacion de guardado. Siguen pendientes las pruebas de precios, activacion, alta de zonas, version nativa y checkout. Los pasos estan en docs/DELIVERY.md.
 
 ## Coordinacion con las ramas del equipo
 

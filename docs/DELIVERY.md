@@ -2,7 +2,7 @@
 
 La primera parte ya está preparada en la rama local `segundo-checkout`: sección **Delivery** del panel administrativo, tablas por zona/localidad y guardado de tarifas en una sola operación.
 
-La app compiló para web, TypeScript pasó y se completaron 26 comprobaciones locales de datos y permisos. Segundo confirmó la ejecución manual en Supabase y compartió la comprobación de 3 modalidades, 9 zonas y 0 tarifas. Falta probar el panel con una cuenta administradora real.
+La app compiló para web, TypeScript pasó y se completaron 26 comprobaciones locales de datos y permisos. Segundo confirmó la ejecución manual en Supabase y compartió la comprobación de 3 modalidades, 9 zonas y 0 tarifas. Segundo también comprobó la versión web local con una cuenta administradora real: cargó Delivery, abrió La Palma y guardó sin cambiar datos, con la zona inactiva y tarifas vacías. La app devolvió «Los cambios de delivery se guardaron».
 
 ## Estado de la base y del esquema compartido
 
@@ -44,6 +44,16 @@ La entrega se sube únicamente a la rama segundo-checkout. No modifica pedidos, 
 - Las pruebas usan una base PostgreSQL local desechable con roles de ejemplo. No usan ni modifican la base real.
 - Nuevos permisos: solo una cuenta con el rol de aplicación `administrador` puede escribir. La lectura pública se limita a configuración activa.
 - El guardado de una zona y sus tarifas es transaccional y usa `SECURITY INVOKER` para respetar RLS.
-- Las pruebas usan el trigger de protección de perfiles.rol del esquema base de Alexander y verifican que un cliente no pueda convertirse en administrador. Las pruebas de sesión real de la app siguen pendientes; esta entrega no cambia políticas de perfiles.
+- Las pruebas usan el trigger de protección de perfiles.rol del esquema base de Alexander y verifican que un cliente no pueda convertirse en administrador. La lectura y el guardado básico con sesión administradora real se comprobaron en la versión web local. La creación de zonas, el guardado de precios, la activación y la prueba nativa con el equipo siguen pendientes; esta entrega no cambia políticas de perfiles.
 - El único archivo existente modificado es `src/components/admin/NavegacionAdmin.tsx`, al que se añade el acceso Delivery. El resto son archivos nuevos.
 - Se conserva sin modificaciones el esquema base incorporado por Alexander en main (3066713); la nueva migración lo complementa con permisos e inicialización de delivery.
+
+## Prueba manual confirmada por Segundo
+
+- Acceso a Administración → Delivery con la cuenta administradora proporcionada por el equipo.
+- Carga de las tres modalidades inactivas desde Supabase.
+- Apertura de La Palma con su ubicación administrativa y enlace de Maps.
+- Guardado sin cambios de negocio, con tarifas vacías y zona inactiva.
+- Mensaje de confirmación: «Los cambios de delivery se guardaron».
+
+La evidencia corresponde a capturas facilitadas por Segundo de la versión web local. No equivale a una prueba completa de checkout, cobro, alta de nuevas zonas o cambios de tarifas.

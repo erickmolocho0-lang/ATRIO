@@ -15,6 +15,9 @@ dist/
 web-build/
 expo-env.d.ts
 
+# Supabase local state
+supabase/.temp/
+
 # Native
 *.orig.*
 *.jks

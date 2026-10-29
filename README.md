@@ -49,12 +49,9 @@ npx expo start
 
 Luego abrir la aplicación mediante Expo Go, un emulador Android/iOS o el navegador.
 
-## Usuarios de prueba
+## Acceso de prueba
 
-| Rol | Correo | Contraseña |
-| --- | --- | --- |
-| Administrador | `yeineredinson6@gmail.com` | `12345678` |
-| Cliente | `yeineredinsonc@gmail.com` | `12345678` |
+Las credenciales de prueba se comparten por un canal privado con el docente y no se publican en este repositorio.
 
 También se puede registrar una nueva cuenta de cliente desde la aplicación.
 

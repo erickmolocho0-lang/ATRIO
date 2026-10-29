@@ -28,7 +28,11 @@ export default function PantallaPago() {
 
   // Preseleccionada desde Perfil → Métodos de pago (solo la preferencia, ver
   // la decisión de diseño documentada en app/metodos-pago.tsx).
-  const [metodoPago, setMetodoPago] = useState<MetodoPago | null>(preferencias.metodoPagoPreferido);
+  // Solo se preselecciona si el método sigue disponible (Plin ya no lo está).
+  const preferido = preferencias.metodoPagoPreferido;
+  const [metodoPago, setMetodoPago] = useState<MetodoPago | null>(
+    metodosPago.some((opcion) => opcion.metodo === preferido) ? preferido : null,
+  );
   const [pagando, setPagando] = useState(false);
   const [tarjeta, setTarjeta] = useState<Tarjeta | null>(null);
   const [cvv, setCvv] = useState('');

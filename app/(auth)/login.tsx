@@ -12,6 +12,7 @@ import {
   Text,
   TextInput,
   View,
+  type TextInputInstance,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '@/constants/colors';
@@ -34,7 +35,7 @@ export default function PantallaInicioSesion() {
     iniciarSesionBiometrica,
   } = useInicioSesion();
 
-  const referenciaContrasena = useRef<TextInput>(null);
+  const referenciaContrasena = useRef<TextInputInstance>(null);
 
   if (!fuentesListas) {
     return <View style={estilos.pantalla} />;

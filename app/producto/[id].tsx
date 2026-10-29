@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -7,13 +8,16 @@ import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { GaleriaProducto } from '@/components/products/GaleriaProducto';
 import { SelectorColor } from '@/components/products/SelectorColor';
 import { SelectorTalla } from '@/components/products/SelectorTalla';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, TIPOGRAFIA } from '@/constants/theme';
 import { useDetalleProducto } from '@/hooks/useDetalleProducto';
 import { useFavoritos } from '@/hooks/useFavoritos';
 import { formatearSoles } from '@/utils/moneda';
 
 export default function PantallaDetalleProducto() {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const {
@@ -145,6 +149,8 @@ export default function PantallaDetalleProducto() {
 }
 
 function FilaInfo({ etiqueta, valor }: { etiqueta: string; valor: string }) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return (
     <View style={styles.filaInfo}>
       <Text style={styles.infoEtiqueta}>{etiqueta}</Text>
@@ -153,7 +159,8 @@ function FilaInfo({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: COLORS.papel },
   contenido: { paddingHorizontal: MEDIDAS.margenLateral, paddingTop: ESPACIO.lg },
   meta: {

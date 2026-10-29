@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BotonPrimario } from '@/components/common/BotonPrimario';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { FormularioTarjeta } from '@/components/pago/FormularioTarjeta';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import { servicioTarjetas } from '@/services/servicioTarjetas';
 import type { DatosTarjeta, Tarjeta } from '@/types';
@@ -21,6 +22,8 @@ function FilaTarjeta({
   alElegir: () => void;
   alEliminar: () => void;
 }) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return (
     <View style={[styles.fila, tarjeta.predeterminada && styles.filaPredeterminada]}>
       <Pressable
@@ -51,6 +54,8 @@ function FilaTarjeta({
 }
 
 export default function PantallaMetodosPago() {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const { desdePago } = useLocalSearchParams<{ desdePago?: string }>();
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -150,7 +155,8 @@ export default function PantallaMetodosPago() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: COLORS.papel },
   contenido: {
     paddingHorizontal: MEDIDAS.margenLateral,

@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import type { Ref } from 'react';
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, RADIO, TIPOGRAFIA } from '@/constants/theme';
 
 interface PropiedadesCampoTexto
@@ -24,6 +26,8 @@ export function CampoTexto({
   autoCapitalize = 'sentences',
   ...resto
 }: PropiedadesCampoTexto) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return (
     <View>
       <Text style={styles.etiqueta}>{etiqueta}</Text>
@@ -43,7 +47,8 @@ export function CampoTexto({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   etiqueta: {
     fontFamily: TIPOGRAFIA.monoFuerte,
     fontSize: 9.5,

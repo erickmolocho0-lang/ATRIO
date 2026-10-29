@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,15 +9,20 @@ import { FilaResumenItem } from '@/components/checkout/FilaResumenItem';
 import { OpcionEntrega } from '@/components/checkout/OpcionEntrega';
 import { TarjetaDireccion } from '@/components/checkout/TarjetaDireccion';
 import { ResumenCarrito } from '@/components/cart/ResumenCarrito';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, TIPOGRAFIA } from '@/constants/theme';
 import { useCheckout } from '@/hooks/useCheckout';
 
 function TituloSeccion({ texto }: { texto: string }) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return <Text style={styles.tituloSeccion}>{texto}</Text>;
 }
 
 export default function PantallaCheckout() {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const insets = useSafeAreaInsets();
   const {
     items,
@@ -132,7 +138,8 @@ export default function PantallaCheckout() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: COLORS.papel },
   contenido: {
     paddingHorizontal: MEDIDAS.margenLateral,

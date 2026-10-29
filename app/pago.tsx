@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BotonPrimario } from '@/components/common/BotonPrimario';
@@ -8,7 +8,8 @@ import { CampoTexto } from '@/components/common/CampoTexto';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { ResumenCarrito } from '@/components/cart/ResumenCarrito';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useCarrito } from '@/hooks/useCarrito';
@@ -20,6 +21,8 @@ import { metodosPago } from '@/data/metodosPago';
 import type { MetodoPago, Tarjeta } from '@/types';
 
 export default function PantallaPago() {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const insets = useSafeAreaInsets();
   const { usuario } = useAuth();
   const { vaciarCarrito } = useCarrito();
@@ -178,7 +181,8 @@ export default function PantallaPago() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: COLORS.papel },
   contenido: {
     paddingHorizontal: MEDIDAS.margenLateral,

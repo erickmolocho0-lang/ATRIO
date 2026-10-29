@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { router } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,12 +7,15 @@ import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { CampoCupon } from '@/components/cart/CampoCupon';
 import { FilaItemCarrito } from '@/components/cart/ItemCarrito';
 import { ResumenCarrito } from '@/components/cart/ResumenCarrito';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, TIPOGRAFIA } from '@/constants/theme';
 import { useCarrito } from '@/hooks/useCarrito';
 import { formatearSoles } from '@/utils/moneda';
 
 export default function PantallaCarrito() {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const insets = useSafeAreaInsets();
   const {
     items,
@@ -91,7 +95,8 @@ export default function PantallaCarrito() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: COLORS.papel },
   itemsCabecera: {
     fontFamily: TIPOGRAFIA.mono,

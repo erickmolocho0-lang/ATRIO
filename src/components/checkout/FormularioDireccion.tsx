@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { StyleSheet, Text, View, type TextInput } from 'react-native';
 import { BotonPrimario } from '@/components/common/BotonPrimario';
 import { CampoTexto } from '@/components/common/CampoTexto';
 import { FilaInterruptor } from '@/components/profile/FilaInterruptor';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, TIPOGRAFIA } from '@/constants/theme';
 import type { DatosDireccion } from '@/types';
 import { validarDatosDireccion } from '@/utils/checkout';
@@ -23,6 +24,8 @@ export function FormularioDireccion({
   textoBoton,
   alGuardar,
 }: PropiedadesFormularioDireccion) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const [etiqueta, setEtiqueta] = useState(inicial?.etiqueta ?? '');
   const [direccion, setDireccion] = useState(inicial?.direccion ?? '');
   const [distrito, setDistrito] = useState(inicial?.distrito ?? '');
@@ -108,7 +111,8 @@ export function FormularioDireccion({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   contenedor: { gap: ESPACIO.base },
   interruptor: { marginHorizontal: -MEDIDAS.margenLateral },
   nota: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: COLORS.textoSecundario },

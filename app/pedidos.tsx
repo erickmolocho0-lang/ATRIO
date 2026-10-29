@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { EstadoVacio } from '@/components/common/EstadoVacio';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { nombreEstadoPedido } from '@/data/estadosPedido';
@@ -13,6 +14,8 @@ import type { Pedido } from '@/types';
 import { formatearSoles } from '@/utils/moneda';
 
 function FilaPedido({ pedido }: { pedido: Pedido }) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const fecha = new Date(pedido.fecha).toLocaleDateString('es-PE', { dateStyle: 'medium' });
   const cantidadProductos = pedido.items.reduce((total, item) => total + item.cantidad, 0);
 
@@ -37,6 +40,8 @@ function FilaPedido({ pedido }: { pedido: Pedido }) {
 }
 
 export default function PantallaPedidos() {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const { usuario } = useAuth();
 
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
@@ -117,7 +122,8 @@ export default function PantallaPedidos() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: COLORS.papel },
   cargando: { marginTop: ESPACIO.xxl },
   lista: { paddingHorizontal: MEDIDAS.margenLateral, paddingBottom: ESPACIO.xxl },

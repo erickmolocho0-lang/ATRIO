@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import type { ResumenCompra } from '@/types';
 import { formatearSoles } from '@/utils/moneda';
@@ -17,6 +19,8 @@ interface PropiedadesFila {
 }
 
 function Fila({ etiqueta, valor, acento, total }: PropiedadesFila) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return (
     <View style={styles.fila}>
       <Text style={[styles.etiqueta, total && styles.etiquetaTotal]}>{etiqueta}</Text>
@@ -34,6 +38,8 @@ function Fila({ etiqueta, valor, acento, total }: PropiedadesFila) {
 }
 
 export function ResumenCarrito({ resumen, envio }: PropiedadesResumenCarrito) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return (
     <View style={styles.contenedor}>
       <Fila etiqueta="Subtotal" valor={formatearSoles(resumen.subtotal)} />
@@ -54,7 +60,8 @@ export function ResumenCarrito({ resumen, envio }: PropiedadesResumenCarrito) {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   contenedor: {
     backgroundColor: COLORS.blanco,
     borderRadius: RADIO.resumen,

@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BotonPrimario } from '@/components/common/BotonPrimario';
 import { EstadoVacio } from '@/components/common/EstadoVacio';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, TIPOGRAFIA } from '@/constants/theme';
 import { nombreMetodoPago } from '@/data/metodosPago';
 import { servicioPedidos } from '@/services/servicioPedidos';
@@ -13,6 +14,8 @@ import type { Pedido } from '@/types';
 import { formatearSoles } from '@/utils/moneda';
 
 function Fila({ etiqueta, valor }: { etiqueta: string; valor: string }) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return (
     <View style={styles.fila}>
       <Text style={styles.etiqueta}>{etiqueta}</Text>
@@ -22,6 +25,8 @@ function Fila({ etiqueta, valor }: { etiqueta: string; valor: string }) {
 }
 
 export default function PantallaConfirmacion() {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const insets = useSafeAreaInsets();
   const { numero } = useLocalSearchParams<{ numero: string }>();
 
@@ -110,7 +115,8 @@ export default function PantallaConfirmacion() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: COLORS.papel },
   centrado: { alignItems: 'center', justifyContent: 'center' },
   contenido: {

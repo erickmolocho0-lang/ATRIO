@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, TIPOGRAFIA } from '@/constants/theme';
 import { CANTIDAD_MAXIMA, CANTIDAD_MINIMA } from '@/context/CarritoContext';
 import type { ItemCarrito } from '@/types';
@@ -19,6 +21,8 @@ export function FilaItemCarrito({
   alCambiarCantidad,
   alEliminar,
 }: PropiedadesFilaItemCarrito) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const { producto, talla, colorId, cantidad } = item;
   const importeLinea = producto.precio * cantidad;
   const nombreColor = producto.colores.find((color) => color.id === colorId)?.nombre ?? colorId;
@@ -87,7 +91,8 @@ export function FilaItemCarrito({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   contenedor: { flexDirection: 'row', gap: ESPACIO.md },
   miniatura: {
     width: 78,

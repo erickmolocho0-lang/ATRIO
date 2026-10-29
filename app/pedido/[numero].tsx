@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ResumenCarrito } from '@/components/cart/ResumenCarrito';
@@ -7,7 +7,8 @@ import { FilaResumenItem } from '@/components/checkout/FilaResumenItem';
 import { TarjetaDireccion } from '@/components/checkout/TarjetaDireccion';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { EstadoVacio } from '@/components/common/EstadoVacio';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { nombreEstadoPedido } from '@/data/estadosPedido';
@@ -18,10 +19,14 @@ import type { EstadoPedido, Pedido } from '@/types';
 const ESTADOS = Object.keys(nombreEstadoPedido) as EstadoPedido[];
 
 function TituloSeccion({ texto }: { texto: string }) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return <Text style={styles.tituloSeccion}>{texto}</Text>;
 }
 
 export default function PantallaDetallePedido() {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const { numero } = useLocalSearchParams<{ numero: string }>();
   const { usuario } = useAuth();
   const esAdministrador = usuario?.rol === 'administrador';
@@ -151,7 +156,8 @@ export default function PantallaDetallePedido() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: COLORS.papel },
   centrado: { alignItems: 'center', justifyContent: 'center' },
   contenido: {

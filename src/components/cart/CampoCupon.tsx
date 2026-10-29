@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 
 interface PropiedadesCampoCupon {
@@ -11,6 +12,8 @@ interface PropiedadesCampoCupon {
 }
 
 export function CampoCupon({ codigoAplicado, alAplicar, alQuitar }: PropiedadesCampoCupon) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const [texto, setTexto] = useState('');
   const [error, setError] = useState(false);
 
@@ -60,7 +63,8 @@ export function CampoCupon({ codigoAplicado, alAplicar, alQuitar }: PropiedadesC
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   fila: { flexDirection: 'row', gap: ESPACIO.sm },
   entrada: {
     flex: 1,

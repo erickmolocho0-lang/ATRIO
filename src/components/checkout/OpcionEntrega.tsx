@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import type { MetodoEntrega } from '@/types';
 import { formatearSoles } from '@/utils/moneda';
@@ -12,6 +14,8 @@ interface PropiedadesOpcionEntrega {
 }
 
 export function OpcionEntrega({ metodo, seleccionado, alSeleccionar }: PropiedadesOpcionEntrega) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return (
     <Pressable
       style={[styles.contenedor, seleccionado && styles.seleccionado]}
@@ -34,7 +38,8 @@ export function OpcionEntrega({ metodo, seleccionado, alSeleccionar }: Propiedad
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   contenedor: {
     minHeight: MEDIDAS.areaTactilMinima + ESPACIO.base,
     flexDirection: 'row',

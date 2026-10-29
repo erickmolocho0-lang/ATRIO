@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import type { Direccion } from '@/types';
 
@@ -21,6 +23,8 @@ export function TarjetaDireccion({
   alEditar,
   alEliminar,
 }: PropiedadesTarjetaDireccion) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return (
     <View style={[styles.contenedor, seleccionada && styles.seleccionada]}>
       <Pressable
@@ -75,7 +79,8 @@ export function TarjetaDireccion({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   contenedor: {
     flexDirection: 'row',
     alignItems: 'center',

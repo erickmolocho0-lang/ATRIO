@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, TIPOGRAFIA } from '@/constants/theme';
 import type { Producto } from '@/types';
 import { formatearSoles } from '@/utils/moneda';
@@ -20,6 +22,8 @@ export function FilaFavorito({
   alQuitarFavorito,
   alAgregar,
 }: PropiedadesFilaFavorito) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return (
     <View style={styles.contenedor}>
       <Pressable style={styles.miniatura} onPress={alPresionar} accessibilityRole="button">
@@ -51,7 +55,8 @@ export function FilaFavorito({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   contenedor: { flexDirection: 'row', gap: ESPACIO.md },
   miniatura: {
     width: 78,

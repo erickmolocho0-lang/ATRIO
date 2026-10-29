@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Dimensions,
   Pressable,
@@ -9,7 +9,8 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, RELACION_IMAGEN } from '@/constants/theme';
 import { MarcadorImagenProducto } from './MarcadorImagenProducto';
 
@@ -31,6 +32,8 @@ export function GaleriaProducto({
   alVolver,
   offsetSuperior = 0,
 }: PropiedadesGaleriaProducto) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const cantidad = imagenes.length > 0 ? imagenes.length : 3;
   const [indiceActivo, setIndiceActivo] = useState(0);
 
@@ -95,7 +98,8 @@ export function GaleriaProducto({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   botones: {
     position: 'absolute',
     left: ESPACIO.lg,

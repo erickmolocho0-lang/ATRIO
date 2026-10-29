@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
@@ -14,11 +14,14 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { useFuentesApp } from '@/hooks/useFuentesApp';
 import { useInicioSesion } from '@/hooks/useInicioSesion';
 
 export default function PantallaInicioSesion() {
+  const { colores: COLORS, esOscuro } = useTema();
+  const estilos = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const insets = useSafeAreaInsets();
   const fuentesListas = useFuentesApp();
   const {
@@ -42,7 +45,7 @@ export default function PantallaInicioSesion() {
 
   return (
     <View style={estilos.pantalla}>
-      <StatusBar style="dark" />
+      <StatusBar style={esOscuro ? 'light' : 'dark'} />
       <KeyboardAvoidingView
         style={estilos.flexible}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -193,7 +196,8 @@ export default function PantallaInicioSesion() {
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: COLORS.papel },
   flexible: { flex: 1 },
   scroll: {

@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { MarcadorImagenProducto } from '@/components/products/MarcadorImagenProducto';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, TIPOGRAFIA } from '@/constants/theme';
 import type { ItemCarrito } from '@/types';
 import { formatearSoles } from '@/utils/moneda';
@@ -12,6 +14,8 @@ function etiquetaVariante(item: ItemCarrito): string {
 }
 
 export function FilaResumenItem({ item }: { item: ItemCarrito }) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const { producto, cantidad } = item;
 
   return (
@@ -35,7 +39,8 @@ export function FilaResumenItem({ item }: { item: ItemCarrito }) {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   contenedor: { flexDirection: 'row', gap: ESPACIO.md },
   miniatura: {
     width: 56,

@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { metodosEntrega } from '@/data/metodosEntrega';
 import type {
+  CambioEstado,
   Direccion,
   EstadoPago,
   EstadoPedido,
@@ -253,6 +254,17 @@ export const servicioPedidos = {
     if (!data) return null;
     const [pedido] = await enriquecerPedidos([data as unknown as FilaPedido]);
     return pedido;
+  },
+
+  // Cambios de estado del pedido, del más antiguo al más reciente.
+  async obtenerHistorial(numero: string): Promise<CambioEstado[]> {
+    const { data, error } = await requerirSupabase()
+      .from('historial_estados_pedido')
+      .select('estado_nuevo, creado_en, pedidos!inner ( numero )')
+      .eq('pedidos.numero', numero)
+      .order('creado_en');
+    if (error) throw new Error(`No se pudo cargar el seguimiento: ${error.message}`);
+    return (data ?? []).map((fila) => ({ estado: fila.estado_nuevo as EstadoPedido, fecha: fila.creado_en }));
   },
 
   async cambiarEstado(numero: string, estado: EstadoPedido): Promise<Pedido> {

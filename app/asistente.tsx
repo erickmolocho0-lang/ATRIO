@@ -23,7 +23,8 @@ export default function PantallaAsistente() {
   const { colores } = useTema();
   const parametros = useLocalSearchParams<{ origen?: string }>();
   const origen: OrigenAsistente = parametros.origen === 'catalogo' ? 'catalogo' : 'inicio';
-  const { mensajes, texto, setTexto, enviando, error, enviarMensaje } = useAgente(origen);
+  const { mensajes, texto, setTexto, enviando, error, enviarMensaje, nuevaConversacion } = useAgente(origen);
+  const soloSaludo = mensajes.length <= 1;
   const listaRef = useRef<FlatList<MensajeChat>>(null);
 
   // Si /asistente termina siendo la única pantalla en el historial (por
@@ -47,16 +48,29 @@ export default function PantallaAsistente() {
   return (
     <SafeAreaView style={[styles.pantalla, { backgroundColor: colores.papel }]} edges={['top', 'bottom']}>
       <View style={[styles.encabezado, { borderBottomColor: colores.borde }]}>
-        <Text style={[styles.titulo, { color: colores.tinta }]}>Asistente ATRIO</Text>
-        <Pressable
-          onPress={cerrarAsistente}
-          accessibilityRole="button"
-          accessibilityLabel="Cerrar asistente"
-          hitSlop={12}
-          style={styles.botonCerrar}
-        >
-          <Ionicons name="close" size={24} color={colores.tinta} />
-        </Pressable>
+        <Text style={[styles.titulo, { color: colores.tinta }]}>Luna</Text>
+        <View style={styles.accionesEncabezado}>
+          <Pressable
+            onPress={nuevaConversacion}
+            disabled={enviando || soloSaludo}
+            accessibilityRole="button"
+            accessibilityLabel="Nueva conversación"
+            hitSlop={8}
+            style={[styles.botonNueva, (enviando || soloSaludo) && styles.botonEnviarInactivo]}
+          >
+            <Ionicons name="create-outline" size={16} color={colores.textoSecundario} />
+            <Text style={[styles.textoNueva, { color: colores.textoSecundario }]}>Nueva conversación</Text>
+          </Pressable>
+          <Pressable
+            onPress={cerrarAsistente}
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar asistente"
+            hitSlop={12}
+            style={styles.botonCerrar}
+          >
+            <Ionicons name="close" size={24} color={colores.tinta} />
+          </Pressable>
+        </View>
       </View>
 
       <KeyboardAvoidingView
@@ -131,6 +145,15 @@ const styles = StyleSheet.create({
     minHeight: MEDIDAS.areaTactilMinima,
   },
   titulo: { fontFamily: TIPOGRAFIA.titulo, fontSize: 17 },
+  accionesEncabezado: { flexDirection: 'row', alignItems: 'center', gap: ESPACIO.xs },
+  botonNueva: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    minHeight: MEDIDAS.areaTactilMinima,
+    paddingHorizontal: ESPACIO.xs,
+  },
+  textoNueva: { fontFamily: TIPOGRAFIA.etiqueta, fontSize: 11.5 },
   botonCerrar: {
     width: MEDIDAS.areaTactilMinima,
     height: MEDIDAS.areaTactilMinima,

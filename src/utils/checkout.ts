@@ -44,6 +44,28 @@ export function detectarProblemasCantidad(items: ItemCarrito[]): ProblemaCheckou
 }
 
 /**
+ * Un problema por cada producto del carrito que el admin desactivó. Usa los
+ * productos releídos (productosActuales), no la copia guardada en el carrito.
+ */
+export function detectarProblemasInactivos(
+  items: ItemCarrito[],
+  productosActuales: Map<string, Producto>,
+): ProblemaCheckout[] {
+  const avisados = new Set<string>();
+  const problemas: ProblemaCheckout[] = [];
+  for (const item of items) {
+    const actual = productosActuales.get(item.producto.id);
+    if (!actual || actual.activo || avisados.has(actual.id)) continue;
+    avisados.add(actual.id);
+    problemas.push({
+      codigo: 'producto-inactivo',
+      mensaje: `«${item.producto.nombre}» ya no está disponible. Quítalo del carrito para continuar.`,
+    });
+  }
+  return problemas;
+}
+
+/**
  * Validación de stock solo para UX, sobre el modelo de variantes
  * (producto.variantes[].stock, por talla+color). La validación definitiva
  * se hace en la nube al confirmar la compra.
@@ -69,10 +91,12 @@ export function detectarProblemasStock(
   for (const item of items) {
     const nombre = item.producto.nombre;
     const actual = productosActuales.get(item.producto.id);
-    if (!actual || !actual.activo) {
+    if (!actual) {
       avisar(`${item.producto.id}:ausente`, `«${nombre}» ya no está disponible.`);
       continue;
     }
+    // Los inactivos los reporta detectarProblemasInactivos.
+    if (!actual.activo) continue;
     const variante = buscarVariante(actual, item.talla, item.colorId);
     if (!variante) {
       avisar(

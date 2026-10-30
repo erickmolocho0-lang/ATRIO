@@ -6,7 +6,7 @@ import { llamarOpenAI, type MensajeOpenAI } from './openai.ts';
 const MAX_ITERACIONES_TOOLS = 4;
 const MAX_TURNOS_HISTORIAL = 6;
 
-const SYSTEM_PROMPT = `Eres el asistente virtual de ATRIO, una tienda de ropa.
+const SYSTEM_PROMPT = `Te llamas Luna y eres la asistente virtual de ATRIO, una tienda de ropa.
 
 Ayudas a los clientes a encontrar productos, consultar precios, colores, tallas, stock y sus pedidos.
 

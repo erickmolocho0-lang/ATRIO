@@ -1,151 +1,47 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BotonPrimario } from '@/components/common/BotonPrimario';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
-import { EstadoVacio } from '@/components/common/EstadoVacio';
-import { FormularioTarjeta } from '@/components/pago/FormularioTarjeta';
 import { COLORS } from '@/constants/colors';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
-import { servicioTarjetas } from '@/services/servicioTarjetas';
-import type { DatosTarjeta, Tarjeta } from '@/types';
+import { useConfiguracion } from '@/hooks/useConfiguracion';
+import { metodosPago } from '@/data/metodosPago';
 
-function FilaTarjeta({
-  tarjeta,
-  alElegir,
-  alEliminar,
-}: {
-  tarjeta: Tarjeta;
-  alElegir: () => void;
-  alEliminar: () => void;
-}) {
-  return (
-    <View style={[styles.fila, tarjeta.predeterminada && styles.filaPredeterminada]}>
-      <Pressable
-        style={styles.filaPrincipal}
-        onPress={alElegir}
-        accessibilityRole="radio"
-        accessibilityState={{ selected: tarjeta.predeterminada }}
-      >
-        <Ionicons
-          name={tarjeta.predeterminada ? 'radio-button-on' : 'radio-button-off'}
-          size={20}
-          color={tarjeta.predeterminada ? COLORS.tinta : COLORS.tinta40}
-        />
-        <View style={styles.textos}>
-          <Text style={styles.nombre}>
-            {tarjeta.marca} •••• {tarjeta.ultimos4}
-          </Text>
-          <Text style={styles.detalle}>
-            {tarjeta.titular} · {tarjeta.vencimiento}
-          </Text>
-        </View>
-      </Pressable>
-      <Pressable onPress={alEliminar} hitSlop={8} accessibilityRole="button" accessibilityLabel="Eliminar tarjeta">
-        <Ionicons name="trash-outline" size={20} color={COLORS.tinta40} />
-      </Pressable>
-    </View>
-  );
-}
-
+// El cliente elige qué método aparece marcado al pagar.
+// No se guardan tarjetas: los datos de la tarjeta se escriben en Mercado Pago.
 export default function PantallaMetodosPago() {
-  const { desdePago } = useLocalSearchParams<{ desdePago?: string }>();
-  const [tarjetas, setTarjetas] = useState<Tarjeta[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [agregando, setAgregando] = useState(false);
-  const [guardando, setGuardando] = useState(false);
-
-  async function recargar() {
-    setTarjetas(await servicioTarjetas.obtenerTarjetas());
-    setCargando(false);
-  }
-
-  useEffect(() => {
-    void recargar();
-  }, []);
-
-  async function guardar(datos: DatosTarjeta) {
-    setGuardando(true);
-    await servicioTarjetas.agregarTarjeta(datos);
-    setGuardando(false);
-    setAgregando(false);
-    // Igual que al elegir una tarjeta existente: si se llegó desde el pago,
-    // agregar la primera tarjeta también debe volver a Pago solo.
-    if (desdePago) {
-      router.back();
-      return;
-    }
-    await recargar();
-  }
-
-  async function elegir(id: string) {
-    await servicioTarjetas.marcarPredeterminada(id);
-    // Si se llegó desde el pago, elegir una tarjeta devuelve al pago.
-    if (desdePago) {
-      router.back();
-      return;
-    }
-    await recargar();
-  }
-
-  function eliminar(tarjeta: Tarjeta) {
-    Alert.alert('Eliminar tarjeta', `¿Eliminar ${tarjeta.marca} •••• ${tarjeta.ultimos4}?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: async () => {
-          await servicioTarjetas.eliminarTarjeta(tarjeta.id);
-          await recargar();
-        },
-      },
-    ]);
-  }
-
-  if (agregando) {
-    return (
-      <SafeAreaView style={styles.pantalla} edges={['top']}>
-        <EncabezadoPantalla titulo="Nueva tarjeta" conBotonVolver />
-        <ScrollView contentContainerStyle={styles.contenido} keyboardShouldPersistTaps="handled">
-          <FormularioTarjeta guardando={guardando} alGuardar={guardar} />
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  const sinTarjetas = !cargando && tarjetas.length === 0;
+  const { preferencias, elegirMetodoPagoPreferido } = useConfiguracion();
 
   return (
     <SafeAreaView style={styles.pantalla} edges={['top']}>
       <EncabezadoPantalla titulo="Métodos de pago" conBotonVolver />
 
-      {sinTarjetas ? (
-        <EstadoVacio
-          icono="card-outline"
-          titulo="Aún no tienes tarjetas"
-          descripcion="Guarda una tarjeta para pagar más rápido."
-          textoBoton="AGREGAR TARJETA"
-          alPresionarBoton={() => setAgregando(true)}
-        />
-      ) : (
-        <>
-          <ScrollView contentContainerStyle={styles.contenido} showsVerticalScrollIndicator={false}>
-            {tarjetas.map((tarjeta) => (
-              <FilaTarjeta
-                key={tarjeta.id}
-                tarjeta={tarjeta}
-                alElegir={() => elegir(tarjeta.id)}
-                alEliminar={() => eliminar(tarjeta)}
+      <ScrollView contentContainerStyle={styles.contenido} showsVerticalScrollIndicator={false}>
+        <Text style={styles.tituloSeccion}>MÉTODO PREFERIDO</Text>
+        {metodosPago.map((opcion) => {
+          const seleccionado = opcion.metodo === preferencias.metodoPagoPreferido;
+          return (
+            <Pressable
+              key={opcion.metodo}
+              style={[styles.opcion, seleccionado && styles.opcionSeleccionada]}
+              onPress={() => elegirMetodoPagoPreferido(opcion.metodo)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: seleccionado }}
+            >
+              <Ionicons
+                name={seleccionado ? 'radio-button-on' : 'radio-button-off'}
+                size={20}
+                color={seleccionado ? COLORS.tinta : COLORS.tinta40}
               />
-            ))}
-          </ScrollView>
-          <View style={styles.barraInferior}>
-            <BotonPrimario texto="AGREGAR TARJETA" variante="contorno" onPress={() => setAgregando(true)} />
-          </View>
-        </>
-      )}
+              <View style={styles.textos}>
+                <Text style={styles.nombre}>{opcion.nombre}</Text>
+                <Text style={styles.detalle}>{opcion.descripcion}</Text>
+              </View>
+            </Pressable>
+          );
+        })}
+        <Text style={styles.detalle}>Los pagos con tarjeta y Yape se procesan con Mercado Pago.</Text>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -158,7 +54,13 @@ const styles = StyleSheet.create({
     paddingBottom: ESPACIO.xxl,
     gap: ESPACIO.base,
   },
-  fila: {
+  tituloSeccion: {
+    fontFamily: TIPOGRAFIA.monoFuerte,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    color: COLORS.textoSecundario,
+  },
+  opcion: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: ESPACIO.md,
@@ -169,17 +71,8 @@ const styles = StyleSheet.create({
     borderRadius: RADIO.imagen,
     backgroundColor: COLORS.blanco,
   },
-  filaPredeterminada: { borderColor: COLORS.tinta },
-  filaPrincipal: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: ESPACIO.md },
+  opcionSeleccionada: { borderColor: COLORS.tinta },
   textos: { flex: 1, gap: 2 },
   nombre: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: COLORS.tinta },
   detalle: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: COLORS.textoSecundario },
-  barraInferior: {
-    paddingHorizontal: MEDIDAS.margenLateral,
-    paddingTop: ESPACIO.md,
-    paddingBottom: ESPACIO.lg,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borde,
-    backgroundColor: COLORS.papel,
-  },
 });

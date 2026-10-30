@@ -6,6 +6,7 @@
 #   supabase link --project-ref <ID_DEL_PROYECTO>
 #   supabase secrets set OPENAI_API_KEY=<tu key> OPENAI_MODEL=gpt-4o-mini
 #   supabase functions deploy agente-atrio
+#   supabase functions deploy eliminar-cuenta
 #
 # OPENAI_MODEL tiene prioridad sobre el valor por defecto del código: tiene
 # que ser un id real de OpenAI ("Luna" es el nombre de la asistente, no un
@@ -21,3 +22,6 @@ verify_jwt = true
 # Mercado Pago no envía sesión de usuario: la seguridad es la firma x-signature.
 [functions.webhook-mercadopago]
 verify_jwt = false
+
+[functions.eliminar-cuenta]
+verify_jwt = true

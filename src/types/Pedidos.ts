@@ -9,7 +9,7 @@ export type EstadoPago = 'pendiente' | 'pagado' | 'fallido' | 'reembolsado';
 
 export interface Pedido extends DatosPago {
   numero: string;
-  usuarioId: string;
+  usuarioId: string | null;
   cliente: string;
   fecha: string;
   metodoPago: MetodoPago;

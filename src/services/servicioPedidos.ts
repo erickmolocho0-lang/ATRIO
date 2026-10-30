@@ -56,7 +56,7 @@ interface FilaPago {
 
 interface FilaPedido {
   id: string;
-  usuario_id: string;
+  usuario_id: string | null;
   numero: string;
   estado: EstadoPedido;
   tipo_entrega: 'envio' | 'retiro';
@@ -178,7 +178,7 @@ const SELECT_PEDIDO = `
 async function enriquecerPedidos(filas: FilaPedido[]): Promise<Pedido[]> {
   const cliente = requerirSupabase();
   const idsDireccion = [...new Set(filas.map((f) => f.direccion_id).filter((id): id is string => !!id))];
-  const idsUsuario = [...new Set(filas.map((f) => f.usuario_id))];
+  const idsUsuario = [...new Set(filas.map((f) => f.usuario_id).filter((id): id is string => !!id))];
 
   const [{ data: filasDireccion }, { data: filasPerfil }] = await Promise.all([
     idsDireccion.length > 0
@@ -217,7 +217,7 @@ async function enriquecerPedidos(filas: FilaPedido[]): Promise<Pedido[]> {
     mapearPedido(
       fila,
       fila.direccion_id ? mapaDirecciones.get(fila.direccion_id) ?? null : null,
-      mapaNombres.get(fila.usuario_id) ?? 'Cliente ATRIO',
+      (fila.usuario_id ? mapaNombres.get(fila.usuario_id) : undefined) ?? 'Cliente ATRIO',
     ),
   );
 }

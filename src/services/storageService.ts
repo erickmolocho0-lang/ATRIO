@@ -112,4 +112,42 @@ export const servicioAlmacenamiento = {
     } catch {
     }
   },
+
+  async eliminarDatosDeCuenta(usuarioId: string): Promise<void> {
+    const clavePreferencias = CLAVES_ALMACENAMIENTO.preferenciasConfiguracion;
+    const preferenciasGuardadas = await AsyncStorage.getItem(clavePreferencias);
+    if (preferenciasGuardadas) {
+      try {
+        const preferencias: unknown = JSON.parse(preferenciasGuardadas);
+        if (preferencias && typeof preferencias === 'object' && 'biometria' in preferencias) {
+          await AsyncStorage.setItem(
+            clavePreferencias,
+            JSON.stringify({ ...preferencias, biometria: false }),
+          );
+        }
+      } catch (error) {
+        console.error('storageService: no se pudo actualizar la preferencia biométrica.', error);
+        throw new Error('No se pudieron limpiar las preferencias locales de esta cuenta.');
+      }
+    }
+
+    const claves = await AsyncStorage.getAllKeys();
+    const clavesDeCuenta = [
+      CLAVES_ALMACENAMIENTO.carrito,
+      CLAVES_ALMACENAMIENTO.favoritos,
+      CLAVES_ALMACENAMIENTO.direcciones,
+      CLAVES_ALMACENAMIENTO.pedidos,
+      CLAVES_ALMACENAMIENTO.tarjetas,
+      CLAVES_ALMACENAMIENTO.usuarioBiometria,
+      CLAVES_ALMACENAMIENTO.sesionBloqueada,
+      CLAVES_ALMACENAMIENTO.intentosInicioSesion,
+      CLAVES_ALMACENAMIENTO.bloqueoInicioSesion,
+    ];
+    const conjuntoClavesDeCuenta = new Set<string>(clavesDeCuenta);
+    const prefijoChat = `${CLAVES_ALMACENAMIENTO.chatLuna}.${usuarioId}.`;
+    const clavesAEliminar = claves.filter(
+      (clave) => conjuntoClavesDeCuenta.has(clave) || clave.startsWith(prefijoChat),
+    );
+    if (clavesAEliminar.length > 0) await AsyncStorage.multiRemove(clavesAEliminar);
+  },
 };

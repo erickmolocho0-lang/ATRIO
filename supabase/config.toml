@@ -10,3 +10,10 @@ project_id = "atrio"
 
 [functions.agente-atrio]
 verify_jwt = true
+
+[functions.crear-pago]
+verify_jwt = true
+
+# Mercado Pago no envía sesión de usuario: la seguridad es la firma x-signature.
+[functions.webhook-mercadopago]
+verify_jwt = false

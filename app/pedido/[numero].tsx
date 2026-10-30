@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ResumenCarrito } from '@/components/cart/ResumenCarrito';
 import { FilaResumenItem } from '@/components/checkout/FilaResumenItem';
@@ -10,12 +10,10 @@ import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { COLORS } from '@/constants/colors';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { nombreEstadoPedido } from '@/data/estadosPedido';
+import { nombreEstadoPedido, siguientesEstados } from '@/data/estadosPedido';
 import { nombreMetodoPago } from '@/data/metodosPago';
 import { servicioPedidos } from '@/services/servicioPedidos';
 import type { EstadoPedido, Pedido } from '@/types';
-
-const ESTADOS = Object.keys(nombreEstadoPedido) as EstadoPedido[];
 
 function TituloSeccion({ texto }: { texto: string }) {
   return <Text style={styles.tituloSeccion}>{texto}</Text>;
@@ -84,8 +82,15 @@ export default function PantallaDetallePedido() {
 
   async function cambiarEstado(estado: EstadoPedido) {
     if (!pedido) return;
-    setPedido(await servicioPedidos.cambiarEstado(pedido.numero, estado));
+    try {
+      setPedido(await servicioPedidos.cambiarEstado(pedido.numero, estado));
+    } catch (err) {
+      Alert.alert('No se pudo cambiar el estado', err instanceof Error ? err.message : '');
+    }
   }
+
+  // Solo los estados a los que se puede pasar desde el actual.
+  const estadosPermitidos = siguientesEstados[pedido.estado];
 
   const fecha = new Date(pedido.fecha).toLocaleString('es-PE', {
     dateStyle: 'medium',
@@ -102,27 +107,20 @@ export default function PantallaDetallePedido() {
           <Text style={styles.estado}>{nombreEstadoPedido[pedido.estado]}</Text>
         </View>
 
-        {esAdministrador ? (
+        {esAdministrador && estadosPermitidos.length > 0 ? (
           <View style={styles.seccion}>
-            <TituloSeccion texto="CAMBIAR ESTADO" />
+            <TituloSeccion texto="CAMBIAR A" />
             <View style={styles.opcionesEstado}>
-              {ESTADOS.map((estado) => {
-                const actual = estado === pedido.estado;
-                return (
-                  <Pressable
-                    key={estado}
-                    style={[styles.opcionEstado, actual && styles.opcionEstadoActual]}
-                    onPress={() => cambiarEstado(estado)}
-                    disabled={actual}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: actual }}
-                  >
-                    <Text style={[styles.textoOpcionEstado, actual && styles.textoOpcionEstadoActual]}>
-                      {nombreEstadoPedido[estado]}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+              {estadosPermitidos.map((estado) => (
+                <Pressable
+                  key={estado}
+                  style={styles.opcionEstado}
+                  onPress={() => cambiarEstado(estado)}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.textoOpcionEstado}>{nombreEstadoPedido[estado]}</Text>
+                </Pressable>
+              ))}
             </View>
           </View>
         ) : null}
@@ -177,9 +175,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIO.chip,
     backgroundColor: COLORS.blanco,
   },
-  opcionEstadoActual: { borderColor: COLORS.tinta, backgroundColor: COLORS.tinta },
   textoOpcionEstado: { fontFamily: TIPOGRAFIA.mono, fontSize: 12, color: COLORS.tinta },
-  textoOpcionEstadoActual: { color: COLORS.papel },
   estado: {
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 11,

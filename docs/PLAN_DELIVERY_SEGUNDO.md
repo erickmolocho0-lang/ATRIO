@@ -1,3 +1,5 @@
+> Estado posterior: la integración de las cinco tareas de Segundo ya está implementada y probada localmente. La activación remota sigue pendiente. Consulta [Checkout de Segundo](CHECKOUT_SEGUNDO.md) para el estado actual; este documento conserva la revisión anterior.
+
 > Actualización del 30 de octubre de 2026: este documento conserva el plan y la evolución inicial. Para el estado actual tras integrar Hans y adaptar el modo oscuro, consulta [la revisión de integración](REVISION_INTEGRACION_2026-10-30.md).
 
 # Delivery de ATRIO: avance de Segundo

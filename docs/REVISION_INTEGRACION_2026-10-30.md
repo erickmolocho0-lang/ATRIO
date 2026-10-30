@@ -1,3 +1,5 @@
+> Estado posterior: la integración de las cinco tareas de Segundo ya está implementada y probada localmente. La activación remota sigue pendiente. Consulta [Checkout de Segundo](CHECKOUT_SEGUNDO.md) para el estado actual; este documento conserva la revisión anterior.
+
 # Revisión de integración de Segundo — 30 de octubre de 2026
 
 ## Código integrado

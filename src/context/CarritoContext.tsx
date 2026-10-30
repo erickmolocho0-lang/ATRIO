@@ -1,6 +1,6 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { cupones } from '@/data/cupones';
+import { servicioCupones } from '@/services/servicioCupones';
 import { servicioCarrito } from '@/services/servicioCarrito';
 import { CLAVES_ALMACENAMIENTO, servicioAlmacenamiento } from '@/services/storageService';
 import type { ItemCarrito, Producto, ResumenCompra } from '@/types';
@@ -27,7 +27,9 @@ interface ValorCarritoContext {
   quitarItem: (productoId: string, varianteId: string) => void;
   cambiarCantidad: (productoId: string, varianteId: string, cantidad: number) => void;
   vaciarCarrito: () => void;
-  aplicarCupon: (codigo: string) => boolean;
+  limpiarCompraConfirmada: () => void;
+  sincronizarCarrito: () => Promise<void>;
+  aplicarCupon: (codigo: string) => Promise<boolean>;
   quitarCupon: () => void;
 }
 
@@ -46,36 +48,30 @@ function lineasValidas(items: ItemCarrito[]): ItemCarrito[] {
   return items.filter((item) => buscarVariantePorId(item.producto, item.varianteId) !== undefined);
 }
 
-function buscarPorcentajeCupon(codigo: string): number | null {
-  const encontrado = cupones.find(
-    (cupon) => cupon.codigo.toUpperCase() === codigo.trim().toUpperCase(),
-  );
-  return encontrado ? encontrado.porcentaje : null;
-}
-
 export function CarritoProvider({ children }: { children: ReactNode }) {
   const { usuario, listo } = useAuth();
   const [items, setItems] = useState<ItemCarrito[]>([]);
   const [codigoCupon, setCodigoCupon] = useState<string | null>(null);
+  const [cuponValidado, setCuponValidado] = useState<{ codigo: string; porcentaje: number } | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [pendientes, setPendientes] = useState(0);
+  const [usuarioCargado, setUsuarioCargado] = useState<string | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!listo) return;
     let cancelado = false;
-    setCargando(true);
-    setError(null);
-
     async function cargar() {
       try {
         if (usuario) {
           const itemsReales = await servicioCarrito.obtenerItems();
-          if (!cancelado) setItems(itemsReales);
+          if (!cancelado) { setItems(itemsReales); setError(null); }
         } else {
           const guardado = await servicioAlmacenamiento.obtenerDato<EstadoCarritoPersistido>(
             CLAVES_ALMACENAMIENTO.carrito,
           );
           if (!cancelado) {
+            setError(null);
             setItems(lineasValidas(guardado?.items ?? []));
             setCodigoCupon(guardado?.codigoCupon ?? null);
           }
@@ -85,7 +81,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
           setError(err instanceof Error ? err.message : 'No se pudo cargar el carrito.');
         }
       } finally {
-        if (!cancelado) setCargando(false);
+        if (!cancelado) { setUsuarioCargado(usuario?.id ?? null); setCargando(false); }
       }
     }
 
@@ -96,10 +92,22 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
   }, [usuario, listo]);
 
   useEffect(() => {
-    if (!listo || usuario || cargando) return;
+    if (!listo || usuario || cargando || usuarioCargado !== null) return;
     const aPersistir: EstadoCarritoPersistido = { items, codigoCupon };
     void servicioAlmacenamiento.guardarDato(CLAVES_ALMACENAMIENTO.carrito, aPersistir);
-  }, [items, codigoCupon, usuario, listo, cargando]);
+  }, [items, codigoCupon, usuario, listo, cargando, usuarioCargado]);
+
+  const persistir = useCallback((operacion: Promise<void>, alFallar: (err: unknown) => void) => {
+    setPendientes((n) => n + 1);
+    void operacion.catch(alFallar).finally(() => setPendientes((n) => n - 1));
+  }, []);
+  const sincronizarCarrito = useCallback(async () => {
+    if (!usuario) return;
+    setCargando(true);
+    try { setItems(await servicioCarrito.obtenerItems()); setError(null); }
+    catch (err) { setError(err instanceof Error ? err.message : 'No se pudo actualizar el carrito.'); }
+    finally { setCargando(false); }
+  }, [usuario]);
 
   const agregarItem = useCallback(
     (producto: Producto, varianteId: string, cantidad = 1) => {
@@ -123,12 +131,12 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
       setError(null);
       if (!usuario) return;
 
-      servicioCarrito.fijarCantidad(varianteId, nuevaCantidad).catch((err) => {
+      persistir(servicioCarrito.fijarCantidad(varianteId, nuevaCantidad), (err) => {
         setItems(previos);
         setError(err instanceof Error ? err.message : 'No se pudo agregar al carrito.');
       });
     },
-    [items, usuario],
+    [items, usuario, persistir],
   );
 
   const quitarItem = useCallback(
@@ -138,12 +146,12 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
       setError(null);
       if (!usuario) return;
 
-      servicioCarrito.quitarItem(varianteId).catch((err) => {
+      persistir(servicioCarrito.quitarItem(varianteId), (err) => {
         setItems(previos);
         setError(err instanceof Error ? err.message : 'No se pudo quitar el producto.');
       });
     },
-    [items, usuario],
+    [items, usuario, persistir],
   );
 
   const cambiarCantidad = useCallback(
@@ -154,7 +162,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
         setItems(previos.filter((item) => !mismaLinea(item, productoId, varianteId)));
         setError(null);
         if (usuario) {
-          servicioCarrito.quitarItem(varianteId).catch((err) => {
+          persistir(servicioCarrito.quitarItem(varianteId), (err) => {
             setItems(previos);
             setError(err instanceof Error ? err.message : 'No se pudo actualizar el carrito.');
           });
@@ -175,12 +183,12 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
       setError(null);
       if (!usuario) return;
 
-      servicioCarrito.fijarCantidad(varianteId, cantidadFinal).catch((err) => {
+      persistir(servicioCarrito.fijarCantidad(varianteId, cantidadFinal), (err) => {
         setItems(previos);
         setError(err instanceof Error ? err.message : 'No se pudo actualizar el carrito.');
       });
     },
-    [items, usuario],
+    [items, usuario, persistir],
   );
 
   const vaciarCarrito = useCallback(() => {
@@ -190,22 +198,35 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
     setError(null);
     if (!usuario) return;
 
-    servicioCarrito.vaciar().catch((err) => {
+    persistir(servicioCarrito.vaciar(), (err) => {
       setItems(previos);
       setError(err instanceof Error ? err.message : 'No se pudo vaciar el carrito.');
     });
-  }, [items, usuario]);
+  }, [items, usuario, persistir]);
 
-  const aplicarCupon = useCallback((codigo: string) => {
-    const porcentaje = buscarPorcentajeCupon(codigo);
-    if (porcentaje == null) return false;
-    setCodigoCupon(codigo.trim().toUpperCase());
+  // confirmar_compra ya vacio el carrito en servidor. No borrar prendas nuevas agregadas durante el pago.
+  const limpiarCompraConfirmada = useCallback(() => {
+    setItems([]); setCodigoCupon(null); setCuponValidado(null); setError(null);
+  }, []);
+
+  const aplicarCupon = useCallback(async (codigo: string) => {
+    const validado = await servicioCupones.validar(codigo);
+    setCuponValidado(validado);
+    setCodigoCupon(validado.codigo);
     return true;
   }, []);
 
   const quitarCupon = useCallback(() => setCodigoCupon(null), []);
 
-  const porcentajeDescuento = codigoCupon ? buscarPorcentajeCupon(codigoCupon) ?? 0 : 0;
+  useEffect(() => {
+    if (!codigoCupon || !usuario) return;
+    let actual = true;
+    servicioCupones.validar(codigoCupon).then((c) => { if (actual) setCuponValidado(c); })
+      .catch(() => { if (actual) setCuponValidado(null); });
+    return () => { actual = false; };
+  }, [codigoCupon, usuario, items]);
+
+  const porcentajeDescuento = cuponValidado?.codigo === codigoCupon ? cuponValidado.porcentaje : 0;
   const contador = items.reduce((acc, item) => acc + item.cantidad, 0);
   const resumen = useMemo(
     () => calcularResumenCompra(items, porcentajeDescuento),
@@ -216,7 +237,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
     () => ({
       items,
       contador,
-      cargando,
+      cargando: cargando || pendientes > 0 || !listo || usuarioCargado !== (usuario?.id ?? null),
       error,
       codigoCupon,
       porcentajeDescuento,
@@ -225,6 +246,8 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
       quitarItem,
       cambiarCantidad,
       vaciarCarrito,
+      limpiarCompraConfirmada,
+      sincronizarCarrito,
       aplicarCupon,
       quitarCupon,
     }),
@@ -232,6 +255,10 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
       items,
       contador,
       cargando,
+      pendientes,
+      usuarioCargado,
+      usuario?.id,
+      listo,
       error,
       codigoCupon,
       porcentajeDescuento,
@@ -240,6 +267,8 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
       quitarItem,
       cambiarCantidad,
       vaciarCarrito,
+      limpiarCompraConfirmada,
+      sincronizarCarrito,
       aplicarCupon,
       quitarCupon,
     ],

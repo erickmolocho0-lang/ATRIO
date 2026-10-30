@@ -6,6 +6,10 @@ export interface Direccion {
   distrito: string;
   referencia?: string;
   predeterminada: boolean;
+  zonaId?: string;
+  zonaNombre?: string;
+  destinatario?: string;
+  telefono?: string;
 }
 
 export type DatosDireccion = Omit<Direccion, 'id' | 'usuarioId'>;

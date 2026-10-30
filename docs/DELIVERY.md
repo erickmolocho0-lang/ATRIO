@@ -1,3 +1,5 @@
+> Estado posterior: la integración de las cinco tareas de Segundo ya está implementada y probada localmente. La activación remota sigue pendiente. Consulta [Checkout de Segundo](CHECKOUT_SEGUNDO.md) para el estado actual; este documento conserva la revisión anterior.
+
 # Delivery: siguiente paso para Segundo
 
 La primera parte ya está preparada en la rama `segundo-checkout`: sección **Delivery** del panel administrativo, tablas por zona/localidad y guardado de tarifas en una sola operación.

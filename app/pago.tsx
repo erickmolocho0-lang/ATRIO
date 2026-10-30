@@ -25,8 +25,8 @@ export default function PantallaPago() {
   const styles = crearEstilos(colores);
   const insets = useSafeAreaInsets();
   const { usuario } = useAuth();
-  const { vaciarCarrito } = useCarrito();
-  const { datosPago, reiniciarCheckout } = useCheckout();
+  const { limpiarCompraConfirmada: vaciarCarrito } = useCarrito();
+  const { datosPago, reiniciarCheckout, error: errorCheckout, validando, reintentarValidacion } = useCheckout();
   const { preferencias } = useConfiguracion();
 
   // Preseleccionada desde Perfil → Métodos de pago.
@@ -50,8 +50,8 @@ export default function PantallaPago() {
       <SafeAreaView style={styles.pantalla} edges={['top']}>
         <EncabezadoPantalla titulo="Pago" conBotonVolver />
         <EstadoVacio
-          titulo="No hay nada que pagar"
-          descripcion="Completa el checkout antes de elegir cómo pagar."
+          titulo={validando ? 'Verificando tu compra…' : 'Revisa tu checkout'}
+          descripcion={errorCheckout ?? 'Completa el checkout antes de elegir cómo pagar.'}
           textoBoton="IR AL CHECKOUT"
           alPresionarBoton={() => router.replace('/checkout')}
         />
@@ -60,31 +60,23 @@ export default function PantallaPago() {
   }
 
   async function pagar() {
-    if (!datosPago || !metodoPago || !puedePagar) return;
+    if (pagando || !datosPago || !metodoPago || !puedePagar) return;
     if (!usuario) {
       router.push('/(auth)/login');
       return;
     }
 
-    // Pendiente real (ver auditoría): la RPC confirmar_compra todavía no
-    // sabe de cupones — no hay tabla `cupones` en el esquema confirmado, así
-    // que aplicarlos aquí sería cobrar un total distinto al que la nube
-    // registra. Se bloquea en vez de cobrar de más en silencio.
-    if (datosPago.resumen.descuento > 0) {
-      Alert.alert(
-        'Cupón no disponible todavía',
-        'Los cupones de descuento aún no están conectados al cobro real. Quita el cupón del carrito para continuar.',
-      );
-      return;
-    }
-
     setPagando(true);
+    let numeroCreado: string | null = null;
     try {
       const { numero } = await servicioPedidos.confirmarCompra({
         metodoPago,
         tipoEntrega: datosPago.metodoEntrega.tipo,
         direccionId: datosPago.direccion?.id ?? null,
+        metodoEntregaId: datosPago.metodoEntrega.id, codigoCupon: datosPago.codigoCupon ?? null,
+        totalEsperado: datosPago.resumen.total,
       });
+      numeroCreado = numero;
       // Con tarjeta se abre la página de pago de Mercado Pago.
       if (metodoPago === 'tarjeta') {
         await servicioMercadoPago.pagarConTarjeta(numero);
@@ -98,7 +90,14 @@ export default function PantallaPago() {
       router.dismissAll();
       router.push({ pathname: '/confirmacion', params: { numero } });
     } catch (error) {
-      Alert.alert('No se pudo confirmar la compra', (error as Error).message);
+      if (numeroCreado) {
+        vaciarCarrito(); reiniciarCheckout();
+        Alert.alert('Pedido pendiente de pago', (error as Error).message);
+        router.replace({ pathname: '/pedido/[numero]', params: { numero: numeroCreado } });
+      } else {
+        Alert.alert('Revisa tu compra', (error as Error).message);
+        void reintentarValidacion();
+      }
     } finally {
       setPagando(false);
     }

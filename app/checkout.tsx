@@ -32,6 +32,7 @@ export default function PantallaCheckout() {
     direccion,
     problemas,
     puedeContinuar,
+    requiereSesion,
     validando,
     error,
     continuarAPago,
@@ -62,6 +63,7 @@ export default function PantallaCheckout() {
       <ScrollView contentContainerStyle={styles.contenido} showsVerticalScrollIndicator={false}>
         <View style={styles.seccion}>
           <TituloSeccion texto="MÉTODO DE ENTREGA" />
+          {metodosEntrega.length === 0 && !validando ? <Text style={styles.avisoDireccion}>No hay modalidades disponibles para tu direccion. Revisa la zona o elige retiro cuando la tienda lo habilite.</Text> : null}
           <View style={styles.listaOpciones}>
             {metodosEntrega.map((metodo) => (
               <OpcionEntrega
@@ -127,9 +129,9 @@ export default function PantallaCheckout() {
 
       <View style={[styles.barraInferior, { paddingBottom: insets.bottom + ESPACIO.md }]}>
         <BotonPrimario
-          texto="CONTINUAR AL PAGO"
+          texto={requiereSesion ? "INICIAR SESIÓN" : "CONTINUAR AL PAGO"}
           onPress={continuarAPago}
-          deshabilitado={!puedeContinuar}
+          deshabilitado={!requiereSesion && !puedeContinuar}
           cargando={validando}
         />
       </View>

@@ -45,7 +45,9 @@ export function TarjetaDireccion({
             <Text style={styles.titulo}>{direccion.etiqueta ?? 'Dirección'}</Text>
             {direccion.predeterminada ? <Text style={styles.chip}>PREDETERMINADA</Text> : null}
           </View>
+          {direccion.destinatario ? <Text style={styles.linea}>{direccion.destinatario} · {direccion.telefono}</Text> : null}
           <Text style={styles.linea}>{direccion.direccion}</Text>
+          {direccion.zonaNombre ? <Text style={styles.linea}>{direccion.zonaNombre}</Text> : null}
           <Text style={styles.linea}>{direccion.distrito}</Text>
           {direccion.referencia ? (
             <Text style={styles.referencia}>Ref.: {direccion.referencia}</Text>

@@ -7,7 +7,7 @@ import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 
 interface PropiedadesCampoCupon {
   codigoAplicado: string | null;
-  alAplicar: (codigo: string) => boolean;
+  alAplicar: (codigo: string) => Promise<boolean>;
   alQuitar: () => void;
 }
 
@@ -15,16 +15,17 @@ export function CampoCupon({ codigoAplicado, alAplicar, alQuitar }: PropiedadesC
   const { colores } = useTema();
   const styles = crearEstilos(colores);
   const [texto, setTexto] = useState('');
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [aplicando, setAplicando] = useState(false);
 
-  const aplicar = () => {
-    const valido = alAplicar(texto);
-    if (valido) {
-      setTexto('');
-      setError(false);
-    } else {
-      setError(true);
-    }
+  const aplicar = async () => {
+    if (aplicando) return;
+    setAplicando(true); setError(null);
+    try {
+      if (await alAplicar(texto)) setTexto('');
+      else setError('Codigo no valido.');
+    } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo validar el cupon.'); }
+    finally { setAplicando(false); }
   };
 
   if (codigoAplicado) {
@@ -44,21 +45,22 @@ export function CampoCupon({ codigoAplicado, alAplicar, alQuitar }: PropiedadesC
       <View style={styles.fila}>
         <TextInput
           style={[styles.entrada, error && styles.entradaError]}
+          editable={!aplicando}
           value={texto}
           onChangeText={(valor) => {
             setTexto(valor);
-            if (error) setError(false);
+            if (error) setError(null);
           }}
           placeholder="Código de descuento"
           placeholderTextColor={colores.tinta45}
           autoCapitalize="characters"
           autoCorrect={false}
         />
-        <Pressable style={styles.boton} onPress={aplicar} accessibilityRole="button">
-          <Text style={styles.botonTexto}>APLICAR</Text>
+        <Pressable style={styles.boton} disabled={aplicando} onPress={() => void aplicar()} accessibilityRole="button">
+          <Text style={styles.botonTexto}>{aplicando ? 'VALIDANDO…' : 'APLICAR'}</Text>
         </Pressable>
       </View>
-      {error ? <Text style={styles.error}>Código no válido</Text> : null}
+      {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
     </View>
   );
 }

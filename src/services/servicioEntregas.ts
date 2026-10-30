@@ -41,6 +41,14 @@ function mapearZona(fila: FilaZona): ZonaEntrega {
 }
 
 export const servicioEntregas = {
+  async obtenerCobertura(): Promise<ConfiguracionEntregas> {
+    const configuracion = await servicioEntregas.obtenerConfiguracion();
+    const modalidades = configuracion.modalidades.filter((m) => m.activo);
+    return { modalidades, zonas: configuracion.zonas.filter((z) => z.activo).map((z) => ({
+      ...z, tarifas: z.tarifas.filter((t) => modalidades.some((m) => m.id === t.metodoId && m.tipo === 'envio')),
+    })).filter((z) => z.tarifas.length > 0) };
+  },
+
   async obtenerConfiguracion(): Promise<ConfiguracionEntregas> {
     const db = cliente();
     const [modalidades, zonas] = await Promise.all([

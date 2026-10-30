@@ -87,8 +87,8 @@ export default function PantallaConfirmacion() {
     <SafeAreaView style={styles.pantalla} edges={['top']}>
       <View style={styles.contenido}>
         <Ionicons name="checkmark-circle-outline" size={64} color={colores.tinta} />
-        <Text style={styles.titulo}>¡Pedido confirmado!</Text>
-        <Text style={styles.subtitulo}>Te avisaremos cuando esté en camino.</Text>
+        <Text style={styles.titulo}>{pedido.estado === 'pendiente_pago' ? 'Pedido pendiente de pago' : pedido.estado === 'cancelado' ? 'Pedido cancelado' : '¡Pedido registrado!'}</Text>
+        <Text style={styles.subtitulo}>{pedido.estado === 'pendiente_pago' ? 'El pago aun no esta confirmado. Revisa el estado de tu pedido.' : pedido.estado === 'cancelado' ? 'Este pedido ya no se procesara.' : 'Puedes consultar su estado en Mis pedidos.'}</Text>
 
         <View style={styles.detalle}>
           <Fila etiqueta="Número de pedido" valor={pedido.numero} />

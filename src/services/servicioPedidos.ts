@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { metodosEntrega } from '@/data/metodosEntrega';
+import { mapearDireccion, type FilaDireccion } from './servicioDirecciones';
 import type {
   CambioEstado,
   Direccion,
@@ -66,6 +66,10 @@ interface FilaPedido {
   igv: number;
   total: number;
   creado_en: string;
+  metodo_entrega_id: string | null;
+  costo_envio: number;
+  cupon_codigo: string | null;
+  datos_entrega: { metodo: MetodoEntrega; direccion: FilaDireccion | null } | null;
   items_pedido: FilaItemPedido[] | null;
   pagos: FilaPago | FilaPago[] | null;
 }
@@ -122,17 +126,14 @@ function pagoDesdeFila(fila: FilaPedido): FilaPago | null {
   return (Array.isArray(fila.pagos) ? fila.pagos[0] : fila.pagos) ?? null;
 }
 
-// El costo de envío no tiene columna propia (confirmado): se reconstruye de
-// forma exacta a partir de los totales ya guardados, que sí son la fuente
-// oficial. Lo que NO se puede recuperar es cuál de las opciones de envío
-// (estándar/express) fue exactamente — solo que fue "envío" o "retiro".
+// Los pedidos nuevos guardan la modalidad exacta, costo y datos de entrega historicos.
+// Para pedidos antiguos sin modalidad exacta se muestra una etiqueta generica.
 function metodoEntregaDesdeFila(fila: FilaPedido): MetodoEntrega {
-  // total = (subtotal - descuento) + envío → envío = total - subtotal + descuento.
-  const costoEnvio = Math.max(0, fila.total - fila.subtotal + fila.descuento);
-  const base =
-    metodosEntrega.find((m) => m.tipo === fila.tipo_entrega) ??
-    metodosEntrega.find((m) => m.tipo === 'retiro')!;
-  return fila.tipo_entrega === 'envio' ? { ...base, costo: costoEnvio } : base;
+  const costo = Number(fila.costo_envio ?? Math.max(0, fila.total - fila.subtotal + fila.descuento));
+  if (fila.datos_entrega?.metodo) return { ...fila.datos_entrega.metodo, costo };
+  const id = fila.metodo_entrega_id;
+  return { id: id ?? fila.tipo_entrega, tipo: fila.tipo_entrega, costo,
+    nombre: id === 'express' ? 'Envio express' : id === 'estandar' ? 'Envio estandar' : fila.tipo_entrega === 'retiro' ? 'Retiro en tienda' : 'Envio (modalidad no registrada)', descripcion: '' };
 }
 
 function mapearPedido(
@@ -151,7 +152,8 @@ function mapearPedido(
     estadoPago: pagoDesdeFila(fila)?.estado ?? 'pendiente',
     estado: fila.estado,
     items: itemsDesdeFila(fila),
-    direccion: metodoEntrega.tipo === 'envio' ? direccion : null,
+    direccion: metodoEntrega.tipo === 'envio' ? (fila.datos_entrega?.direccion ? mapearDireccion(fila.datos_entrega.direccion, fila.usuario_id) : direccion) : null,
+    codigoCupon: fila.cupon_codigo,
     metodoEntrega,
     resumen: {
       subtotal: fila.subtotal,
@@ -164,7 +166,7 @@ function mapearPedido(
 }
 
 const SELECT_PEDIDO = `
-  id, usuario_id, numero, estado, tipo_entrega, direccion_id, subtotal, descuento, igv, total, creado_en,
+  id, usuario_id, numero, estado, tipo_entrega, direccion_id, subtotal, descuento, igv, total, creado_en, metodo_entrega_id, costo_envio, cupon_codigo, datos_entrega,
   items_pedido (
     variante_id, nombre_producto, talla, color_nombre, cantidad, precio_unitario,
     variantes_producto ( productos ( categoria_id, categorias ( nombre ), imagenes_producto ( url, orden ) ) )
@@ -182,7 +184,7 @@ async function enriquecerPedidos(filas: FilaPedido[]): Promise<Pedido[]> {
 
   const [{ data: filasDireccion }, { data: filasPerfil }] = await Promise.all([
     idsDireccion.length > 0
-      ? cliente.from('direcciones').select('id, etiqueta, direccion, distrito, referencia, predeterminada').in('id', idsDireccion)
+      ? cliente.from('direcciones').select('id, etiqueta, direccion, distrito, referencia, predeterminada, zona_id, destinatario, telefono').in('id', idsDireccion)
       : Promise.resolve({ data: [] as unknown[] }),
     idsUsuario.length > 0
       ? cliente.from('perfiles').select('id, nombre').in('id', idsUsuario)
@@ -191,7 +193,7 @@ async function enriquecerPedidos(filas: FilaPedido[]): Promise<Pedido[]> {
 
   const mapaDirecciones = new Map(
     (filasDireccion ?? []).map((d) => {
-      const t = d as { id: string; etiqueta: string | null; direccion: string; distrito: string | null; referencia: string | null; predeterminada: boolean };
+      const t = d as { id: string; etiqueta: string | null; direccion: string; distrito: string | null; referencia: string | null; predeterminada: boolean; zona_id: string | null; destinatario: string | null; telefono: string | null };
       return [
         t.id,
         {
@@ -201,7 +203,7 @@ async function enriquecerPedidos(filas: FilaPedido[]): Promise<Pedido[]> {
           direccion: t.direccion,
           distrito: t.distrito ?? '',
           referencia: t.referencia ?? undefined,
-          predeterminada: t.predeterminada,
+          predeterminada: t.predeterminada, zonaId: t.zona_id ?? undefined, destinatario: t.destinatario ?? undefined, telefono: t.telefono ?? undefined,
         } as Direccion,
       ];
     }),
@@ -223,6 +225,15 @@ async function enriquecerPedidos(filas: FilaPedido[]): Promise<Pedido[]> {
 }
 
 export const servicioPedidos = {
+  async cotizar(datos: { metodoEntregaId: string; direccionId: string | null; codigoCupon: string | null }): Promise<import('@/types').ResumenCheckout> {
+    const { data, error } = await requerirSupabase().rpc('cotizar_checkout', {
+      p_metodo_entrega_id: datos.metodoEntregaId, p_direccion_id: datos.direccionId, p_codigo_cupon: datos.codigoCupon,
+    });
+    if (error) throw new Error(error.code === 'PGRST202' ? 'La tienda debe habilitar el checkout actualizado.' : error.message);
+    const c = data?.[0];
+    if (!c) throw new Error('No se pudo verificar el total de la compra.');
+    return { subtotal: Number(c.subtotal), descuento: Number(c.descuento), envio: Number(c.costo_envio), igv: Number(c.igv), total: Number(c.total) };
+  },
   // Sin filtro de usuario: RLS decide qué ve — el cliente solo los suyos, el
   // administrador todos (política ya definida en la auditoría/SQL entregado).
   async obtenerPedidos(): Promise<Pedido[]> {
@@ -286,11 +297,15 @@ export const servicioPedidos = {
     metodoPago: MetodoPago;
     tipoEntrega: 'envio' | 'retiro';
     direccionId: string | null;
+    metodoEntregaId: string;
+    codigoCupon: string | null;
+    totalEsperado: number;
   }): Promise<{ numero: string; total: number }> {
     const { data, error } = await requerirSupabase().rpc('confirmar_compra', {
       p_metodo_pago: datos.metodoPago,
       p_tipo_entrega: datos.tipoEntrega,
       p_direccion_id: datos.direccionId,
+      p_metodo_entrega_id: datos.metodoEntregaId, p_codigo_cupon: datos.codigoCupon, p_total_esperado: datos.totalEsperado,
     });
     if (error) throw new Error(error.message);
     const fila = Array.isArray(data) ? data[0] : data;

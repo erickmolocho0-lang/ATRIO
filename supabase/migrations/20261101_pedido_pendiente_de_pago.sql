@@ -219,3 +219,9 @@ REVOKE ALL ON FUNCTION public.cancelar_pedidos_sin_pagar() FROM PUBLIC, anon, au
 
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 SELECT cron.schedule('cancelar-pedidos-sin-pagar', '*/5 * * * *', 'SELECT public.cancelar_pedidos_sin_pagar()');
+
+
+-- 4. El servidor (webhook y crear-pago) lee el pedido y actualiza su pago.
+--    En este proyecto las tablas no dan permisos automáticamente al rol de servicio.
+GRANT SELECT ON public.pedidos TO service_role;
+GRANT SELECT, UPDATE ON public.pagos TO service_role;

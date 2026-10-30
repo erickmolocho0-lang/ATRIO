@@ -1,4 +1,4 @@
-import { Alert, Pressable, ScrollView, Share, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarraHorizontal } from '@/components/admin/BarraHorizontal';
 import { BarrasPorDia } from '@/components/admin/BarrasPorDia';
@@ -9,7 +9,9 @@ import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import { useReportes } from '@/hooks/useReportes';
 import { useTema } from '@/hooks/useTema';
+import { compartirCsv } from '@/services/servicioExportacion';
 import { formatearSoles } from '@/utils/moneda';
+import { fechaLocalIso } from '@/utils/rangoFechas';
 import { generarCsvProductos } from '@/utils/reportes';
 
 export default function PantallaReportes() {
@@ -23,6 +25,7 @@ export default function PantallaReportes() {
     recargar,
     preset,
     seleccionarPreset,
+    rango,
     etiquetaRango,
     aplicarRangoPersonalizado,
     errorRango,
@@ -38,10 +41,12 @@ export default function PantallaReportes() {
       Alert.alert('Sin datos', 'No hay ventas para exportar todavía.');
       return;
     }
-    await Share.share({
-      title: `Reporte de ventas ATRIO ${etiquetaRango}`,
-      message: generarCsvProductos(reporte),
-    });
+    const nombre = `reporte-ventas_${fechaLocalIso(rango.desde)}_a_${fechaLocalIso(rango.hasta)}.csv`;
+    try {
+      await compartirCsv(nombre, generarCsvProductos(reporte));
+    } catch (err) {
+      Alert.alert('No se pudo exportar', err instanceof Error ? err.message : 'Inténtalo de nuevo.');
+    }
   };
 
   return (

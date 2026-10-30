@@ -32,7 +32,8 @@
         {
           "photosPermission": "ATRIO necesita acceder a tus fotos para que elijas la imagen de un producto."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true

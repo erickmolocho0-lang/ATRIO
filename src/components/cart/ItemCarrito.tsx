@@ -52,6 +52,7 @@ export function FilaItemCarrito({
             TALLA {talla} · {nombreColor}
           </Text>
         </View>
+        {producto.activo === false ? <Text style={styles.noDisponible}>Ya no disponible</Text> : null}
 
         <View style={styles.filaInferior}>
           <View style={styles.control}>
@@ -115,6 +116,12 @@ const styles = StyleSheet.create({
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 11,
     color: COLORS.tinta50,
+  },
+  noDisponible: {
+    marginTop: ESPACIO.xs,
+    fontFamily: TIPOGRAFIA.etiqueta,
+    fontSize: 11,
+    color: COLORS.arcilla,
   },
   filaInferior: {
     marginTop: ESPACIO.sm,

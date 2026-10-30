@@ -2,8 +2,7 @@ import type { MetodoPago } from '@/types';
 
 export const metodosPago: { metodo: MetodoPago; nombre: string; descripcion: string }[] = [
   { metodo: 'tarjeta', nombre: 'Tarjeta', descripcion: 'Crédito o débito' },
-  { metodo: 'yape', nombre: 'Yape', descripcion: 'Pago con QR' },
-  { metodo: 'plin', nombre: 'Plin', descripcion: 'Pago con QR' },
+  { metodo: 'yape', nombre: 'Yape', descripcion: 'Con tu celular y código de aprobación' },
   { metodo: 'contra_entrega', nombre: 'Contra entrega', descripcion: 'Pagas al recibir tu pedido' },
 ];
 

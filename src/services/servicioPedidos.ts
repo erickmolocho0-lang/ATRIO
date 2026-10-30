@@ -1,7 +1,9 @@
 import { supabase } from '@/lib/supabase';
 import { metodosEntrega } from '@/data/metodosEntrega';
 import type {
+  CambioEstado,
   Direccion,
+  EstadoPago,
   EstadoPedido,
   ItemCarrito,
   MetodoEntrega,
@@ -47,9 +49,14 @@ interface FilaItemPedido {
   } | null;
 }
 
+interface FilaPago {
+  metodo: string;
+  estado: EstadoPago;
+}
+
 interface FilaPedido {
   id: string;
-  usuario_id: string;
+  usuario_id: string | null;
   numero: string;
   estado: EstadoPedido;
   tipo_entrega: 'envio' | 'retiro';
@@ -60,7 +67,7 @@ interface FilaPedido {
   total: number;
   creado_en: string;
   items_pedido: FilaItemPedido[] | null;
-  pagos: { metodo: string } | { metodo: string }[] | null;
+  pagos: FilaPago | FilaPago[] | null;
 }
 
 // items_pedido guarda una FOTO del momento de la compra (nombre, talla,
@@ -111,9 +118,8 @@ function itemsDesdeFila(fila: FilaPedido): ItemCarrito[] {
   }));
 }
 
-function metodoPagoDesdeFila(fila: FilaPedido): MetodoPago {
-  const pago = Array.isArray(fila.pagos) ? fila.pagos[0] : fila.pagos;
-  return (pago?.metodo as MetodoPago) ?? 'contra_entrega';
+function pagoDesdeFila(fila: FilaPedido): FilaPago | null {
+  return (Array.isArray(fila.pagos) ? fila.pagos[0] : fila.pagos) ?? null;
 }
 
 // El costo de envío no tiene columna propia (confirmado): se reconstruye de
@@ -141,7 +147,8 @@ function mapearPedido(
     usuarioId: fila.usuario_id,
     cliente: nombreCliente,
     fecha: fila.creado_en,
-    metodoPago: metodoPagoDesdeFila(fila),
+    metodoPago: (pagoDesdeFila(fila)?.metodo as MetodoPago) ?? 'contra_entrega',
+    estadoPago: pagoDesdeFila(fila)?.estado ?? 'pendiente',
     estado: fila.estado,
     items: itemsDesdeFila(fila),
     direccion: metodoEntrega.tipo === 'envio' ? direccion : null,
@@ -162,7 +169,7 @@ const SELECT_PEDIDO = `
     variante_id, nombre_producto, talla, color_nombre, cantidad, precio_unitario,
     variantes_producto ( productos ( categoria_id, categorias ( nombre ), imagenes_producto ( url, orden ) ) )
   ),
-  pagos ( metodo )
+  pagos ( metodo, estado )
 `;
 
 // direcciones/perfiles no tienen FK directa hacia `pedidos` que PostgREST
@@ -171,7 +178,7 @@ const SELECT_PEDIDO = `
 async function enriquecerPedidos(filas: FilaPedido[]): Promise<Pedido[]> {
   const cliente = requerirSupabase();
   const idsDireccion = [...new Set(filas.map((f) => f.direccion_id).filter((id): id is string => !!id))];
-  const idsUsuario = [...new Set(filas.map((f) => f.usuario_id))];
+  const idsUsuario = [...new Set(filas.map((f) => f.usuario_id).filter((id): id is string => !!id))];
 
   const [{ data: filasDireccion }, { data: filasPerfil }] = await Promise.all([
     idsDireccion.length > 0
@@ -210,7 +217,7 @@ async function enriquecerPedidos(filas: FilaPedido[]): Promise<Pedido[]> {
     mapearPedido(
       fila,
       fila.direccion_id ? mapaDirecciones.get(fila.direccion_id) ?? null : null,
-      mapaNombres.get(fila.usuario_id) ?? 'Cliente ATRIO',
+      (fila.usuario_id ? mapaNombres.get(fila.usuario_id) : undefined) ?? 'Cliente ATRIO',
     ),
   );
 }
@@ -249,9 +256,23 @@ export const servicioPedidos = {
     return pedido;
   },
 
+  // Cambios de estado del pedido, del más antiguo al más reciente.
+  async obtenerHistorial(numero: string): Promise<CambioEstado[]> {
+    const { data, error } = await requerirSupabase()
+      .from('historial_estados_pedido')
+      .select('estado_nuevo, creado_en, pedidos!inner ( numero )')
+      .eq('pedidos.numero', numero)
+      .order('creado_en');
+    if (error) throw new Error(`No se pudo cargar el seguimiento: ${error.message}`);
+    return (data ?? []).map((fila) => ({ estado: fila.estado_nuevo as EstadoPedido, fecha: fila.creado_en }));
+  },
+
   async cambiarEstado(numero: string, estado: EstadoPedido): Promise<Pedido> {
-    const { error } = await requerirSupabase().from('pedidos').update({ estado }).eq('numero', numero);
-    if (error) throw new Error(`No se pudo cambiar el estado del pedido: ${error.message}`);
+    const { error } = await requerirSupabase().rpc('cambiar_estado_pedido', {
+      p_numero: numero,
+      p_estado_nuevo: estado,
+    });
+    if (error) throw new Error(error.message);
     const actualizado = await servicioPedidos.obtenerPedido(numero);
     if (!actualizado) throw new Error('El pedido no existe.');
     return actualizado;

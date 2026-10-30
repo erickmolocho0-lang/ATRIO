@@ -7,13 +7,9 @@ import {
   type PropsWithChildren,
 } from 'react';
 import { servicioAutenticacion } from '@/services/servicioAutenticacion';
-import { conLimiteDeTiempo } from '@/utils/promesas';
+import { supabase } from '@/lib/supabase';
 import type { Usuario } from '@/types/Usuario';
 
-// Igual que en useSplashBootstrap.ts: esta restauración de sesión es
-// independiente de la del splash (corre en paralelo), y sin límite propio
-// también podía quedar colgada para siempre si Supabase respondía lento o
-// nunca respondía — `listo` nunca pasaba a true.
 const MS_LIMITE_RESTAURAR_SESION = 8000;
 
 interface AuthContexto {
@@ -28,6 +24,7 @@ interface AuthContexto {
     contrasena: string;
   }) => Promise<Usuario>;
   cerrarSesion: () => Promise<void>;
+  eliminarCuenta: () => Promise<void>;
 }
 
 const ContextoAuth = createContext<AuthContexto | null>(null);
@@ -37,25 +34,47 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [listo, setListo] = useState(false);
 
   useEffect(() => {
+    if (!supabase) {
+      const timerSinSupabase = setTimeout(() => setListo(true), 0);
+      return () => clearTimeout(timerSinSupabase);
+    }
+
     let cancelado = false;
-    conLimiteDeTiempo(servicioAutenticacion.obtenerUsuarioActual(), MS_LIMITE_RESTAURAR_SESION, null)
-      .then((usuarioActual) => {
-        if (!cancelado) setUsuario(usuarioActual);
-      })
-      .catch((err) => {
-        // No debe tumbar el arranque de la app: sin sesión restaurada, se
-        // trata igual que "no hay usuario" (va a login), pero el error
-        // queda visible en consola, no escondido.
-        console.error('AuthContext: no se pudo restaurar la sesión.', err);
-      })
-      .finally(() => {
-        if (!cancelado) {
-          setListo(true);
-          console.log('AUTH listo');
-        }
+    let revisionSesion = 0;
+    const timerLimite = setTimeout(() => {
+      if (!cancelado) setListo(true);
+    }, MS_LIMITE_RESTAURAR_SESION);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_evento, sesion) => {
+      const revisionActual = ++revisionSesion;
+      if (!sesion) {
+        setUsuario(null);
+        setListo(true);
+        return;
+      }
+
+      setTimeout(() => {
+        void servicioAutenticacion.obtenerUsuarioDeSesion(sesion)
+          .then((usuarioActual) => {
+            if (!cancelado && revisionActual === revisionSesion) {
+              setUsuario(usuarioActual);
+              setListo(true);
+              console.log('AUTH listo');
+            }
+          })
+          .catch((err) => {
+            console.error('AuthContext: no se pudo actualizar la sesión.', err);
+            if (!cancelado && revisionActual === revisionSesion) {
+              setUsuario(null);
+              setListo(true);
+            }
+          });
       });
+    });
+
     return () => {
       cancelado = true;
+      clearTimeout(timerLimite);
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -87,8 +106,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setUsuario(null);
   }, []);
 
+  const eliminarCuenta = useCallback(async () => {
+    if (!usuario) throw new Error('Debes iniciar sesión para eliminar tu cuenta.');
+    await servicioAutenticacion.eliminarCuenta(usuario.id);
+    setUsuario(null);
+  }, [usuario]);
+
   return (
-    <ContextoAuth.Provider value={{ usuario, listo, iniciarSesion, iniciarSesionBiometrica, registrar, cerrarSesion }}>
+    <ContextoAuth.Provider value={{ usuario, listo, iniciarSesion, iniciarSesionBiometrica, registrar, cerrarSesion, eliminarCuenta }}>
       {children}
     </ContextoAuth.Provider>
   );

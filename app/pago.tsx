@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { router } from 'expo-router';
+import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BotonPrimario } from '@/components/common/BotonPrimario';
@@ -15,10 +15,10 @@ import { useCarrito } from '@/hooks/useCarrito';
 import { useCheckout } from '@/hooks/useCheckout';
 import { useConfiguracion } from '@/hooks/useConfiguracion';
 import { servicioPedidos } from '@/services/servicioPedidos';
-import { servicioTarjetas } from '@/services/servicioTarjetas';
+import { servicioMercadoPago } from '@/services/servicioMercadoPago';
 import { metodosPago } from '@/data/metodosPago';
 import { servicioNotificaciones } from '@/services/servicioNotificaciones';
-import type { MetodoPago, Tarjeta } from '@/types';
+import type { MetodoPago } from '@/types';
 
 export default function PantallaPago() {
   const insets = useSafeAreaInsets();
@@ -27,29 +27,21 @@ export default function PantallaPago() {
   const { datosPago, reiniciarCheckout } = useCheckout();
   const { preferencias } = useConfiguracion();
 
-  // Preseleccionada desde Perfil → Métodos de pago (solo la preferencia, ver
-  // la decisión de diseño documentada en app/metodos-pago.tsx).
-  const [metodoPago, setMetodoPago] = useState<MetodoPago | null>(preferencias.metodoPagoPreferido);
-  const [pagando, setPagando] = useState(false);
-  const [tarjeta, setTarjeta] = useState<Tarjeta | null>(null);
-  const [cvv, setCvv] = useState('');
-
-  // Al volver de "Métodos de pago" se lee otra vez la tarjeta predeterminada.
-  useFocusEffect(
-    useCallback(() => {
-      servicioTarjetas
-        .obtenerTarjetas()
-        .then((tarjetas) => setTarjeta(tarjetas.find((t) => t.predeterminada) ?? null));
-    }, []),
+  // Preseleccionada desde Perfil → Métodos de pago.
+  // Solo se preselecciona si el método sigue disponible (Plin ya no lo está).
+  const preferido = preferencias.metodoPagoPreferido;
+  const [metodoPago, setMetodoPago] = useState<MetodoPago | null>(
+    metodosPago.some((opcion) => opcion.metodo === preferido) ? preferido : null,
   );
+  const [pagando, setPagando] = useState(false);
+  const [celularYape, setCelularYape] = useState('');
+  const [codigoYape, setCodigoYape] = useState('');
 
-  // El CVV solo se valida; nunca se guarda.
-  const pagoConTarjeta = metodoPago === 'tarjeta';
-  const cvvValido = /^\d{3,4}$/.test(cvv);
-  const puedePagar = metodoPago !== null && (!pagoConTarjeta || (tarjeta !== null && cvvValido));
-
-  const irAMetodosPago = () =>
-    router.push({ pathname: '/metodos-pago', params: { desdePago: 'si' } });
+  // Yape necesita el celular (9 dígitos) y el código de la app Yape (6 dígitos).
+  const pagoConYape = metodoPago === 'yape';
+  const celularValido = /^\d{9}$/.test(celularYape);
+  const codigoValido = /^\d{6}$/.test(codigoYape);
+  const puedePagar = metodoPago !== null && (!pagoConYape || (celularValido && codigoValido));
 
   if (!datosPago) {
     return (
@@ -91,6 +83,13 @@ export default function PantallaPago() {
         tipoEntrega: datosPago.metodoEntrega.tipo,
         direccionId: datosPago.direccion?.id ?? null,
       });
+      // Con tarjeta se abre la página de pago de Mercado Pago.
+      if (metodoPago === 'tarjeta') {
+        await servicioMercadoPago.pagarConTarjeta(numero);
+      }
+      if (metodoPago === 'yape') {
+        await servicioMercadoPago.pagarConYape(numero, celularYape, codigoYape);
+      }
       vaciarCarrito();
       reiniciarCheckout();
       void servicioNotificaciones.notificarPedidoRecibido(numero);
@@ -135,33 +134,28 @@ export default function PantallaPago() {
           })}
         </View>
 
-        {pagoConTarjeta ? (
+        {pagoConYape ? (
           <View style={styles.seccion}>
-            <Text style={styles.tituloSeccion}>TARJETA</Text>
-            {tarjeta ? (
-              <>
-                <View style={styles.filaTarjeta}>
-                  <Text style={styles.nombreOpcion}>
-                    {tarjeta.marca} •••• {tarjeta.ultimos4}
-                  </Text>
-                  <Pressable onPress={irAMetodosPago} hitSlop={8} accessibilityRole="button">
-                    <Text style={styles.enlace}>CAMBIAR</Text>
-                  </Pressable>
-                </View>
-                <CampoTexto
-                  etiqueta="CVV"
-                  valor={cvv}
-                  alCambiar={setCvv}
-                  placeholder="123"
-                  maxLength={4}
-                  error={cvv && !cvvValido ? 'El CVV tiene 3 o 4 dígitos.' : undefined}
-                />
-              </>
-            ) : (
-              <Pressable onPress={irAMetodosPago} accessibilityRole="button">
-                <Text style={styles.enlace}>AGREGAR UNA TARJETA</Text>
-              </Pressable>
-            )}
+            <Text style={styles.tituloSeccion}>YAPE</Text>
+            <CampoTexto
+              etiqueta="CELULAR"
+              valor={celularYape}
+              alCambiar={setCelularYape}
+              placeholder="987654321"
+              maxLength={9}
+              keyboardType="number-pad"
+              error={celularYape && !celularValido ? 'El celular tiene 9 dígitos.' : undefined}
+            />
+            <CampoTexto
+              etiqueta="CÓDIGO DE APROBACIÓN"
+              valor={codigoYape}
+              alCambiar={setCodigoYape}
+              placeholder="123456"
+              maxLength={6}
+              keyboardType="number-pad"
+              error={codigoYape && !codigoValido ? 'El código tiene 6 dígitos.' : undefined}
+            />
+            <Text style={styles.descripcionOpcion}>Lo encuentras en tu app Yape, en el menú.</Text>
           </View>
         ) : null}
 
@@ -188,14 +182,6 @@ const styles = StyleSheet.create({
     gap: MEDIDAS.separacionSecciones,
   },
   seccion: { gap: ESPACIO.sm },
-  filaTarjeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  enlace: {
-    fontFamily: TIPOGRAFIA.etiqueta,
-    fontSize: 11,
-    letterSpacing: 0.6,
-    color: COLORS.tinta,
-    textDecorationLine: 'underline',
-  },
   tituloSeccion: {
     fontFamily: TIPOGRAFIA.monoFuerte,
     fontSize: 11,

@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { servicioProductos } from '@/services/servicioProductos';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { servicioProductos, type OpcionesPaginaCatalogo } from '@/services/servicioProductos';
 import type { Producto } from '@/types';
-import { stockTotal } from '@/utils/variantes';
 
 export type OrdenCatalogo = 'novedad' | 'precio' | 'popularidad';
 
@@ -19,7 +18,9 @@ const FILTROS_INICIALES: FiltrosCatalogo = {
   soloDisponibles: false,
 };
 
-const ITEMS_POR_PAGINA = 20;
+// Espera antes de consultar mientras se escribe en el buscador: ahora cada
+// búsqueda es una consulta a Supabase, no un filtro en memoria.
+const RETRASO_BUSQUEDA_MS = 300;
 
 interface OpcionesUseCatalogo {
   categoriaInicial?: string;
@@ -27,81 +28,98 @@ interface OpcionesUseCatalogo {
 
 export function useCatalogo({ categoriaInicial = 'todo' }: OpcionesUseCatalogo = {}) {
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
+  const [busquedaAplicada, setBusquedaAplicada] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState(categoriaInicial);
   const [orden, setOrden] = useState<OrdenCatalogo>('novedad');
   const [filtros, setFiltros] = useState<FiltrosCatalogo>(FILTROS_INICIALES);
-  const [pagina, setPagina] = useState(1);
 
-  const [todos, setTodos] = useState<Producto[]>([]);
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [pagina, setPagina] = useState(1);
+  const [hayMas, setHayMas] = useState(false);
+  const [total, setTotal] = useState(0);
   const [cargando, setCargando] = useState(true);
+  const [cargandoMas, setCargandoMas] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Cada cambio de filtros abre una "generación" nueva: las respuestas de
+  // generaciones anteriores (que pueden llegar tarde) se descartan.
+  const generacionRef = useRef(0);
+
   useEffect(() => {
-    let cancelado = false;
+    const temporizador = setTimeout(() => setBusquedaAplicada(terminoBusqueda.trim()), RETRASO_BUSQUEDA_MS);
+    return () => clearTimeout(temporizador);
+  }, [terminoBusqueda]);
+
+  const opciones = useMemo<OpcionesPaginaCatalogo>(
+    () => ({
+      categoriaId: categoriaActiva,
+      busqueda: busquedaAplicada,
+      precioMax: filtros.precioMax,
+      tallas: filtros.tallas,
+      colores: filtros.colores,
+      soloDisponibles: filtros.soloDisponibles,
+      orden,
+    }),
+    [categoriaActiva, busquedaAplicada, filtros, orden],
+  );
+
+  // Cualquier cambio de filtros, búsqueda u orden vuelve a la página 1.
+  useEffect(() => {
+    generacionRef.current += 1;
+    const generacion = generacionRef.current;
     setCargando(true);
+    setCargandoMas(false);
     setError(null);
     servicioProductos
-      .obtenerProductos()
-      .then((productos) => {
-        if (!cancelado) setTodos(productos);
+      .obtenerPaginaCatalogo({ ...opciones, pagina: 1 })
+      .then((resultado) => {
+        if (generacion !== generacionRef.current) return;
+        setProductos(resultado.productos);
+        setHayMas(resultado.hayMas);
+        setTotal(resultado.total);
+        setPagina(1);
       })
       .catch((err) => {
-        if (!cancelado) {
-          setError(err instanceof Error ? err.message : 'No se pudieron cargar los productos.');
-        }
+        if (generacion !== generacionRef.current) return;
+        setError(err instanceof Error ? err.message : 'No se pudieron cargar los productos.');
+        setProductos([]);
+        setHayMas(false);
+        setTotal(0);
       })
       .finally(() => {
-        if (!cancelado) setCargando(false);
+        if (generacion === generacionRef.current) setCargando(false);
       });
     return () => {
-      cancelado = true;
+      generacionRef.current += 1;
     };
-  }, []);
+  }, [opciones]);
 
-  const productosFiltrados = useMemo<Producto[]>(() => {
-    const termino = terminoBusqueda.trim().toLowerCase();
-
-    let lista = todos.filter((producto) => {
-      if (categoriaActiva !== 'todo' && producto.categoriaId !== categoriaActiva) return false;
-      if (
-        termino &&
-        !producto.nombre.toLowerCase().includes(termino) &&
-        !producto.categoriaNombre.toLowerCase().includes(termino)
-      ) {
-        return false;
-      }
-      if (filtros.soloDisponibles && stockTotal(producto) <= 0) return false;
-      if (filtros.precioMax != null && producto.precio > filtros.precioMax) return false;
-      if (
-        filtros.tallas.length > 0 &&
-        !producto.variantes.some((v) => v.stock > 0 && filtros.tallas.includes(v.talla))
-      ) {
-        return false;
-      }
-      if (
-        filtros.colores.length > 0 &&
-        !producto.variantes.some((v) => v.stock > 0 && filtros.colores.includes(v.colorId))
-      ) {
-        return false;
-      }
-      return true;
-    });
-
-    lista = [...lista].sort((a, b) => {
-      if (orden === 'precio') return a.precio - b.precio;
-      if (orden === 'popularidad') return b.popularidad30d - a.popularidad30d;
-      return b.fechaAlta.localeCompare(a.fechaAlta);
-    });
-
-    return lista;
-  }, [todos, categoriaActiva, terminoBusqueda, orden, filtros]);
-
-  useEffect(() => {
-    setPagina(1);
-  }, [categoriaActiva, terminoBusqueda, orden, filtros]);
-
-  const productosVisibles = productosFiltrados.slice(0, pagina * ITEMS_POR_PAGINA);
-  const hayMas = productosVisibles.length < productosFiltrados.length;
+  const cargarMas = useCallback(() => {
+    if (cargando || cargandoMas || !hayMas) return;
+    const generacion = generacionRef.current;
+    const siguiente = pagina + 1;
+    setCargandoMas(true);
+    servicioProductos
+      .obtenerPaginaCatalogo({ ...opciones, pagina: siguiente })
+      .then((resultado) => {
+        if (generacion !== generacionRef.current) return;
+        // Si el catálogo cambió entre páginas, se evita mostrar un producto dos veces.
+        setProductos((actuales) => {
+          const vistos = new Set(actuales.map((producto) => producto.id));
+          return [...actuales, ...resultado.productos.filter((producto) => !vistos.has(producto.id))];
+        });
+        setHayMas(resultado.hayMas);
+        setTotal(resultado.total);
+        setPagina(siguiente);
+      })
+      .catch((err) => {
+        if (generacion !== generacionRef.current) return;
+        setError(err instanceof Error ? err.message : 'No se pudieron cargar más productos.');
+      })
+      .finally(() => {
+        if (generacion === generacionRef.current) setCargandoMas(false);
+      });
+  }, [cargando, cargandoMas, hayMas, pagina, opciones]);
 
   return {
     terminoBusqueda,
@@ -113,11 +131,12 @@ export function useCatalogo({ categoriaInicial = 'todo' }: OpcionesUseCatalogo =
     filtros,
     setFiltros,
     reiniciarFiltros: () => setFiltros(FILTROS_INICIALES),
-    productosVisibles,
-    contadorResultados: productosFiltrados.length,
+    productosVisibles: productos,
+    contadorResultados: total,
     hayMas,
-    cargarMas: () => setPagina((actual) => actual + 1),
+    cargarMas,
     cargando,
+    cargandoMas,
     error,
   };
 }

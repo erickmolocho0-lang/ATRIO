@@ -1,5 +1,5 @@
 import type { Ref } from 'react';
-import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { StyleSheet, Text, TextInput, View, type TextInputInstance, type TextInputProps } from 'react-native';
 import { COLORS } from '@/constants/colors';
 import { ESPACIO, RADIO, TIPOGRAFIA } from '@/constants/theme';
 
@@ -12,7 +12,7 @@ interface PropiedadesCampoTexto
   valor: string;
   alCambiar: (texto: string) => void;
   error?: string;
-  referencia?: Ref<TextInput>;
+  referencia?: Ref<TextInputInstance>;
 }
 
 export function CampoTexto({

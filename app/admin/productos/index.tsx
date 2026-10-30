@@ -112,7 +112,7 @@ export default function PantallaListaProductosAdmin() {
           />
         )}
         ListEmptyComponent={
-          cargando ? null : (
+          cargando ? undefined : (
             <EstadoVacio
               titulo="Sin productos"
               descripcion="No hay productos que coincidan con la búsqueda o los filtros."

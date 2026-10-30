@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { servicioBiometria } from './servicioBiometria';
 import { CLAVES_ALMACENAMIENTO, servicioAlmacenamiento } from './storageService';
@@ -162,6 +162,40 @@ export const servicioAutenticacion = {
 
     const perfil = await obtenerPerfil(cliente, data.session.user.id);
     return construirUsuario(data.session.user.id, data.session.user.email ?? '', perfil);
+  },
+
+  async obtenerUsuarioDeSesion(sesion: Session): Promise<Usuario | null> {
+    const bloqueada = await servicioAlmacenamiento.obtenerDato<boolean>(
+      CLAVES_ALMACENAMIENTO.sesionBloqueada,
+    );
+    if (bloqueada) return null;
+
+    const cliente = requerirSupabase();
+    const perfil = await obtenerPerfil(cliente, sesion.user.id);
+    return construirUsuario(sesion.user.id, sesion.user.email ?? '', perfil);
+  },
+
+  async eliminarCuenta(usuarioId: string): Promise<void> {
+    const cliente = requerirSupabase();
+    const { error } = await cliente.functions.invoke('eliminar-cuenta', { method: 'POST' });
+    if (error) throw error;
+
+    const { error: errorSesion } = await cliente.auth.signOut({ scope: 'local' });
+    if (errorSesion) {
+      console.error('servicioAutenticacion: cuenta eliminada, pero no se pudo cerrar la sesión local.', errorSesion);
+      throw new Error(
+        'La cuenta se eliminó, pero no se pudo cerrar la sesión en este dispositivo. Reinicia la aplicación.',
+      );
+    }
+
+    try {
+      await servicioAlmacenamiento.eliminarDatosDeCuenta(usuarioId);
+    } catch (error) {
+      console.error('servicioAutenticacion: cuenta eliminada, pero no se pudieron limpiar datos locales.', error);
+      throw new Error(
+        'La cuenta se eliminó, pero no se pudieron limpiar todos los datos locales. Reinicia la aplicación.',
+      );
+    }
   },
 
   // Con biometría activa, "cerrar sesión" es un bloqueo local (como en una

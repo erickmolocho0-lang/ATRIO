@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ESPACIO, MEDIDAS, TIPOGRAFIA } from '@/constants/theme';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
@@ -16,9 +16,35 @@ export default function PantallaPerfil() {
     irAConfiguracion,
     irACentroAyuda,
     cerrarSesion,
+    eliminarCuenta,
   } = usePerfil();
   const { usuario } = useAuth();
   const { colores } = useTema();
+
+  const confirmarEliminacionCuenta = () => {
+    Alert.alert(
+      'Eliminar cuenta',
+      'Esta acción es permanente. Se eliminarán tus datos de cuenta y tus pedidos se conservarán sin vincularlos a tu usuario.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar cuenta',
+          style: 'destructive',
+          onPress: () => {
+            void eliminarCuenta().catch((error: unknown) => {
+              console.error('perfil: no se pudo completar la eliminación de la cuenta.', error);
+              Alert.alert(
+                'No se pudo completar',
+                error instanceof Error && error.message.startsWith('La cuenta se eliminó')
+                  ? error.message
+                  : 'No se pudo eliminar tu cuenta. Inténtalo de nuevo más tarde.',
+              );
+            });
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <SafeAreaView style={[styles.contenedor, { backgroundColor: colores.papel }]} edges={['top']}>
@@ -48,6 +74,14 @@ export default function PantallaPerfil() {
             onPress={cerrarSesion}
             destructivo
           />
+          {usuario && (
+            <FilaOpcionPerfil
+              icono="trash-outline"
+              texto="Eliminar cuenta"
+              onPress={confirmarEliminacionCuenta}
+              destructivo
+            />
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

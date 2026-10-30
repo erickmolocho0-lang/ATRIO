@@ -3,7 +3,7 @@
 // 1. Verifica la firma (x-signature): si no coincide, no viene de Mercado Pago.
 // 2. Consulta el pago real en Mercado Pago (no se confía en lo que trae el aviso).
 // 3. Aprobado y con el monto exacto del pedido → pago "pagado" y pedido "preparado".
-//    Rechazado o cancelado → pago "fallido" y pedido "cancelado" (repone el stock).
+//    Rechazado o cancelado → pago "fallido"; el pedido espera un reintento.
 //
 // Secretos necesarios: MP_ACCESS_TOKEN y MP_WEBHOOK_SECRET (clave secreta que
 // Mercado Pago muestra al configurar el webhook).
@@ -61,11 +61,11 @@ Deno.serve(async (req) => {
     }
   }
 
+  // El pedido no se cancela aquí: con tarjeta el cliente puede reintentar en
+  // la misma página. Si nunca paga, cancelar_pedidos_sin_pagar lo cancela a
+  // los 30 minutos y repone el stock.
   if (rechazado) {
     await supabase.from('pagos').update({ estado: 'fallido', referencia_externa: idPago }).eq('pedido_id', pedido.id);
-    if (pedido.estado === 'pendiente_pago') {
-      await supabase.rpc('cambiar_estado_pedido', { p_numero: pedido.numero, p_estado_nuevo: 'cancelado' });
-    }
   }
 
   return new Response('ok');

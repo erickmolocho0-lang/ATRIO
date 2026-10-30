@@ -57,3 +57,11 @@ La entrega se sube únicamente a la rama segundo-checkout. No modifica pedidos, 
 - Mensaje de confirmación: «Los cambios de delivery se guardaron».
 
 La evidencia corresponde a capturas facilitadas por Segundo de la versión web local. No equivale a una prueba completa de checkout, cobro, alta de nuevas zonas o cambios de tarifas.
+
+## Compatibilidad con Expo SDK 58
+
+Se incorporo en segundo-checkout la actualizacion del equipo a Expo SDK 58.0.21, React 19.3 y React Native 0.88.1. Se conserva Delivery y se adapta su referencia de desplazamiento a ScrollViewInstance.
+
+Dependencias instaladas desde el package-lock del equipo mediante npm ci. TypeScript correcto, 26 pruebas de delivery correctas y expo-doctor 1.21.5 con 20/20 controles correctos. El servidor web se reinicio con la cache renovada y tanto /admin/entregas como el paquete JavaScript respondieron HTTP 200. La prueba nativa sigue pendiente.
+
+Esta actualizacion no requiere modificar tablas, tarifas ni credenciales de Supabase.

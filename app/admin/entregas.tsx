@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AccionesAdmin, NavegacionAdmin } from '@/components/admin/NavegacionAdmin';
 import { FormularioZonaEntrega } from '@/components/admin/FormularioZonaEntrega';
@@ -24,7 +24,7 @@ export default function PantallaEntregasAdmin() {
   const [aviso, setAviso] = useState<string | null>(null);
   const [edicion, setEdicion] = useState<Edicion | null>(null);
   const solicitud = useRef(0);
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ScrollViewInstance>(null);
 
   const recargar = useCallback(async () => {
     const numero = ++solicitud.current;

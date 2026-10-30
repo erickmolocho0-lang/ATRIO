@@ -43,7 +43,7 @@ Se realizaron solicitudes con la clave anónima pública, sin sesión de cliente
 4. La propietaria define las modalidades, horarios, zonas, tarifas y promociones que realmente ofrecerá. Esta entrega no activa ni asigna valores de negocio en la base compartida.
 5. Probar con una cuenta de prueba autorizada: dirección con zona, estándar/express/retiro, cupón válido e inválido, cambio de tarifa antes de pagar, historial y cancelación. Comprobar que resumen, pedidos.total y pagos.monto coincidan.
 6. Probar tarjeta/Yape en el entorno de prueba de Hans y verificar el estado final desde Supabase. No basta con volver de la página de pago para asumir aprobación.
-7. Después de esa validación, el coordinador puede integrar segundo-checkout a main. Esta entrega solo se publica en la rama de Segundo.
+7. El coordinador autorizó integrar segundo-checkout a main. Se publica conservando la rama de Segundo y la integración de Hans que ya contiene main.
 
 La revisión del código y las pruebas locales están completas. La ejecución de la migración y la validación remota con sesión no se sustituyen por suposiciones sobre lo que haya desplegado otro integrante.
 
@@ -58,7 +58,7 @@ La pantalla de cupones explica que falta habilitar la actualizacion. Cotizar, co
 - ATRIO10 se usa en la prueba local: pedidos.descuento y pagos.monto coinciden con la cotización. No se crea una promoción real automáticamente.
 - Cupones: código, porcentaje, vigente_hasta, usos_maximos y activo; se agregan usos_actuales y mínimo de compra para control y gestión. La fila del cupón se bloquea antes de reservar el uso. Un fallo posterior revierte también el contador.
 - Predeterminada: CREATE UNIQUE INDEX direcciones_predeterminada_unica ON direcciones(usuario_id) WHERE predeterminada, además de la función transaccional. No se corrigen duplicados existentes de forma automática.
-- La función de compra de Hans se conserva para la transición; la integración a main y la comprobación final del pago con Hans siguen pendientes. Los costos y horarios reales los confirma la propietaria.
+- La función de compra de Hans se conserva para la transición. La integración a main fue autorizada por el coordinador; los controles automáticos no sustituyen la conciliación de pagos reales. Los costos y horarios reales los confirma la propietaria.
 - En Cupones, si falla la carga, se muestra el error y Reintentar; no se muestra el formulario para crear ni se afirma que la tabla esté vacía.
 
 Referencia técnica para la selección de funciones por argumentos: [PostgREST, funciones RPC](https://docs.postgrest.org/en/stable/references/api/functions.html). Las firmas difieren en los nombres y cantidad de argumentos, sin valores por defecto en la versión nueva.
@@ -66,3 +66,11 @@ Referencia técnica para la selección de funciones por argumentos: [PostgREST, 
 ## Activación remota comprobada después del instalador
 
 Segundo compartió la captura Success. No rows returned. Se verificaron sin sesión las columnas de cupones (incluidos usos máximos/actuales), destinatario y datos del pedido, y las funciones cotizar_checkout, validar_cupon y guardar_direccion_checkout. La API reconoce tanto la llamada anterior de Hans de tres parámetros como la nueva de seis, sin errores de caché ni ambigüedad. Todas rechazan correctamente al rol anónimo con 42501; no se crearon pedidos ni se consultaron registros. Esto comprueba la disponibilidad de la estructura y no sustituye una prueba con una sesión autenticada ni un pago. La creación del índice queda respaldada por la ejecución correcta del instalador transaccional facilitado; no se inspeccionó directamente el catálogo remoto desde la API.
+
+## Integración autorizada a main
+
+El 30 de octubre de 2026 Segundo trasladó la autorización del jefe de grupo para publicar su parte en main. La revisión parte de origin/main 1460927 (PR #20 de Hans), cuyo árbol coincide con origin/hans-pedidos. No hay cambios de código nuevos en main pendientes de incorporar y la integración permite avanzar sin reescribir historial.
+
+Antes de publicar se repitieron TypeScript, las 76 comprobaciones de delivery/checkout/compatibilidad, las 38 del instalador completo y ESLint de los archivos cambiados salvo los dos archivos de pedidos con errores preexistentes documentados. Todos esos controles pasaron. La API remota reconoce columnas y funciones nuevas y las firmas anterior y nueva de compra, y rechaza correctamente el acceso anónimo. La confirmación de pagos de la pasarela no se fuerza desde la app ni desde estas comprobaciones.
+
+La estructura de Supabase ya fue aplicada manualmente por Segundo: el equipo no debe repetir el instalador por el hecho de actualizar main. Si posteriormente utiliza migraciones automáticas, debe reconciliar su historial con las versiones ya aplicadas antes de intentar ejecutarlas de nuevo.

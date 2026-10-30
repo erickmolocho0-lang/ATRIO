@@ -17,6 +17,7 @@ import { useConfiguracion } from '@/hooks/useConfiguracion';
 import { servicioPedidos } from '@/services/servicioPedidos';
 import { servicioTarjetas } from '@/services/servicioTarjetas';
 import { metodosPago } from '@/data/metodosPago';
+import { servicioNotificaciones } from '@/services/servicioNotificaciones';
 import type { MetodoPago, Tarjeta } from '@/types';
 
 export default function PantallaPago() {
@@ -92,6 +93,7 @@ export default function PantallaPago() {
       });
       vaciarCarrito();
       reiniciarCheckout();
+      void servicioNotificaciones.notificarPedidoRecibido(numero);
       // Cierra Checkout y Pago: terminada la compra, "atrás" ya no vuelve a ellos.
       router.dismissAll();
       router.push({ pathname: '/confirmacion', params: { numero } });

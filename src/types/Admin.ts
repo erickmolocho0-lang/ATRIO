@@ -1,4 +1,10 @@
-export type EstadoPedido = 'preparado' | 'en_camino' | 'entregado' | 'cancelado' | 'devuelto';
+export type EstadoPedido =
+  | 'pendiente_pago'
+  | 'preparado'
+  | 'en_camino'
+  | 'entregado'
+  | 'cancelado'
+  | 'devuelto';
 
 export interface ResumenDashboardAdmin {
   totalVentas: number;

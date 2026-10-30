@@ -256,8 +256,11 @@ export const servicioPedidos = {
   },
 
   async cambiarEstado(numero: string, estado: EstadoPedido): Promise<Pedido> {
-    const { error } = await requerirSupabase().from('pedidos').update({ estado }).eq('numero', numero);
-    if (error) throw new Error(`No se pudo cambiar el estado del pedido: ${error.message}`);
+    const { error } = await requerirSupabase().rpc('cambiar_estado_pedido', {
+      p_numero: numero,
+      p_estado_nuevo: estado,
+    });
+    if (error) throw new Error(error.message);
     const actualizado = await servicioPedidos.obtenerPedido(numero);
     if (!actualizado) throw new Error('El pedido no existe.');
     return actualizado;

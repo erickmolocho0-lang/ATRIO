@@ -4,10 +4,15 @@
 // · Tarjeta: crea una preferencia de Checkout Pro y devuelve la URL donde el
 //   cliente paga. Al terminar, Mercado Pago vuelve a la app (urlRetorno).
 // · Yape: recibe el token que la app obtuvo con el celular y el código de la
-//   app Yape, y crea el pago. La respuesta llega aprobada o rechazada al instante.
-// En ambos casos quien confirma el pago es el webhook (webhook-mercadopago).
+//   app Yape, y crea el pago. La respuesta llega aprobada o rechazada al
+//   instante, así que aquí mismo se confirma (o se marca fallido) el pago.
+// La tarjeta la confirma el webhook (webhook-mercadopago).
 //
-// Secreto necesario: MP_ACCESS_TOKEN (Access Token de prueba de Mercado Pago).
+// Secretos: MP_ACCESS_TOKEN (tarjeta) y MP_ACCESS_TOKEN_YAPE (Yape).
+// En modo prueba Mercado Pago exige credenciales distintas para cada uno:
+// Checkout Pro solo cobra con un vendedor de prueba, y los pagos por API
+// (Yape) solo con las credenciales TEST- de la cuenta real. En producción
+// los dos secretos tendrían el mismo Access Token.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { CORS_HEADERS } from '../_shared/cors.ts';
@@ -28,11 +33,11 @@ function respuesta(cuerpo: unknown, estado = 200) {
   });
 }
 
-async function llamarMercadoPago(ruta: string, cuerpo: unknown, idempotencia: string) {
+async function llamarMercadoPago(ruta: string, cuerpo: unknown, idempotencia: string, token: string) {
   const res = await fetch(`${MERCADO_PAGO}${ruta}`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${Deno.env.get('MP_ACCESS_TOKEN')}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
       'X-Idempotency-Key': idempotencia,
     },
@@ -41,6 +46,19 @@ async function llamarMercadoPago(ruta: string, cuerpo: unknown, idempotencia: st
   const datos = await res.json();
   if (!res.ok) throw new Error(datos.message ?? 'Mercado Pago rechazó la solicitud.');
   return datos;
+}
+
+// Guarda el resultado de un pago con Yape. Usa la clave de servicio porque el
+// cliente no puede cambiar pagos ni estados por su cuenta.
+async function registrarPagoYape(pedido: { id: string; numero: string }, aprobado: boolean, idPago: string) {
+  const servidor = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  await servidor
+    .from('pagos')
+    .update({ estado: aprobado ? 'pagado' : 'fallido', referencia_externa: idPago })
+    .eq('pedido_id', pedido.id);
+  if (aprobado) {
+    await servidor.rpc('cambiar_estado_pedido', { p_numero: pedido.numero, p_estado_nuevo: 'preparado' });
+  }
 }
 
 Deno.serve(async (req) => {
@@ -54,7 +72,7 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: req.headers.get('Authorization')! } },
   });
   const { data: usuario } = await supabase.auth.getUser();
-  const { data: pedido } = await supabase.from('pedidos').select('numero, total').eq('numero', numero).maybeSingle();
+  const { data: pedido } = await supabase.from('pedidos').select('id, numero, total').eq('numero', numero).maybeSingle();
   if (!usuario.user || !pedido) return respuesta({ error: 'El pedido no existe.' }, 404);
 
   const urlWebhook = `${Deno.env.get('SUPABASE_URL')}/functions/v1/webhook-mercadopago`;
@@ -71,6 +89,7 @@ Deno.serve(async (req) => {
           auto_return: 'approved',
         },
         `preferencia-${pedido.numero}`,
+        Deno.env.get('MP_ACCESS_TOKEN')!,
       );
       return respuesta({ urlPago: preferencia.init_point });
     }
@@ -89,8 +108,11 @@ Deno.serve(async (req) => {
           payer: { email: usuario.user.email },
         },
         `yape-${pedido.numero}-${tokenYape}`,
+        Deno.env.get('MP_ACCESS_TOKEN_YAPE')!,
       );
-      return respuesta({ aprobado: pago.status === 'approved' });
+      const aprobado = pago.status === 'approved';
+      await registrarPagoYape(pedido, aprobado, String(pago.id));
+      return respuesta({ aprobado });
     }
 
     return respuesta({ error: 'Método de pago inválido.' }, 400);

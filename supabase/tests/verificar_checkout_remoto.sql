@@ -18,3 +18,10 @@ SELECT to_regprocedure('public.confirmar_compra(text,text,uuid,text)') AS firma_
 
 -- Si pg_cron esta instalado, comprobar por separado:
 -- SELECT jobname,schedule,active FROM cron.job WHERE jobname='cancelar-pedidos-sin-pagar';
+
+-- El total debe ser cero antes de crear el indice unico. No modifica preferencias.
+SELECT count(*) AS usuarios_con_predeterminadas_duplicadas FROM (
+  SELECT usuario_id FROM public.direcciones WHERE predeterminada GROUP BY usuario_id HAVING count(*)>1
+) duplicados;
+SELECT indexname,indexdef FROM pg_indexes
+WHERE schemaname='public' AND tablename='direcciones' AND indexname='direcciones_predeterminada_unica';

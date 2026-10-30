@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node delivery.test.mjs && node checkout.test.mjs && node compatibilidad.test.mjs"
+    "test": "node delivery.test.mjs && node checkout.test.mjs && node compatibilidad.test.mjs",
+    "test:instalador": "node checkout.test.mjs --instalador"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.13"

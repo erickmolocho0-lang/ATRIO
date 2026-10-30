@@ -7,6 +7,8 @@ export interface Cupon {
   minimo_compra: number;
   vigente_desde: string | null;
   vigente_hasta: string | null;
+  usos_maximos: number | null;
+  usos_actuales: number;
 }
 
 function cliente() {
@@ -23,13 +25,14 @@ export const servicioCupones = {
     return { codigo: fila.codigo, porcentaje: Number(fila.porcentaje) };
   },
   async listar(): Promise<Cupon[]> {
-    const { data, error } = await cliente().from('cupones').select('*').order('codigo');
-    if (error) throw new Error(error.code === 'PGRST205' || error.code === '42P01' ? 'Los cupones aún no están habilitados. Falta aplicar la actualización de la tienda.' : error.message);
-    return (data ?? []).map((c) => ({ ...c, porcentaje: Number(c.porcentaje), minimo_compra: Number(c.minimo_compra) }));
+    const { data, error } = await cliente().from('cupones').select('codigo, porcentaje, activo, minimo_compra, vigente_desde, vigente_hasta, usos_maximos, usos_actuales').order('codigo');
+    if (error) throw new Error(error.code === 'PGRST205' || error.code === '42P01' || error.code === '42703' || error.code === 'PGRST204' ? 'Los cupones aún no están habilitados. Falta aplicar la actualización de la tienda.' : error.message);
+    return (data ?? []).map((c) => ({ ...c, porcentaje: Number(c.porcentaje), minimo_compra: Number(c.minimo_compra), usos_maximos: c.usos_maximos == null ? null : Number(c.usos_maximos), usos_actuales: Number(c.usos_actuales) }));
   },
-  async guardar(cupon: Cupon, nuevo = false): Promise<void> {
-    const consulta = nuevo ? cliente().from('cupones').insert(cupon) : cliente().from('cupones').update(cupon).eq('codigo', cupon.codigo);
+  async guardar(cupon: Omit<Cupon, 'usos_actuales'>, nuevo = false): Promise<void> {
+    const datos = { codigo: cupon.codigo, porcentaje: cupon.porcentaje, activo: cupon.activo, minimo_compra: cupon.minimo_compra, vigente_desde: cupon.vigente_desde, vigente_hasta: cupon.vigente_hasta, usos_maximos: cupon.usos_maximos };
+    const consulta = nuevo ? cliente().from('cupones').insert(datos) : cliente().from('cupones').update(datos).eq('codigo', cupon.codigo);
     const { error } = await consulta.select('codigo').single();
-    if (error) throw new Error(error.code === 'PGRST205' || error.code === '42P01' ? 'Los cupones aún no están habilitados. Falta aplicar la actualización de la tienda.' : error.message);
+    if (error) throw new Error(error.code === 'PGRST205' || error.code === '42P01' || error.code === '42703' || error.code === 'PGRST204' ? 'Los cupones aún no están habilitados. Falta aplicar la actualización de la tienda.' : error.message);
   },
 };

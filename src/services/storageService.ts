@@ -12,6 +12,7 @@ export const CLAVES_ALMACENAMIENTO = {
   preferenciasConfiguracion: 'atrio.configuracion.preferencias',
   direcciones: 'atrio.direcciones',
   pedidos: 'atrio.pedidos',
+  // Ya no se guardan tarjetas; la clave queda para borrar las de versiones anteriores.
   tarjetas: 'atrio.tarjetas',
   // Prefijo: la clave real es `${chatLuna}.${usuarioId | 'invitado'}.${origen}`.
   chatLuna: 'atrio.chat.luna',

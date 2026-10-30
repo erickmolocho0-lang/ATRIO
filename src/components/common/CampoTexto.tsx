@@ -6,7 +6,13 @@ import { ESPACIO, RADIO, TIPOGRAFIA } from '@/constants/theme';
 interface PropiedadesCampoTexto
   extends Pick<
     TextInputProps,
-    'placeholder' | 'autoCapitalize' | 'maxLength' | 'returnKeyType' | 'onSubmitEditing' | 'editable'
+    | 'placeholder'
+    | 'autoCapitalize'
+    | 'maxLength'
+    | 'returnKeyType'
+    | 'onSubmitEditing'
+    | 'editable'
+    | 'keyboardType'
   > {
   etiqueta: string;
   valor: string;

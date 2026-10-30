@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "scheme": "atrio",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -32,7 +31,10 @@
         {
           "photosPermission": "ATRIO necesita acceder a tus fotos para que elijas la imagen de un producto."
         }
-      ]
+      ],
+      "expo-splash-screen",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

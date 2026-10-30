@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { StyleSheet, Text, View, type TextInput } from 'react-native';
+import { StyleSheet, Text, View, type TextInputInstance } from 'react-native';
 import { BotonPrimario } from '@/components/common/BotonPrimario';
 import { CampoTexto } from '@/components/common/CampoTexto';
 import { FilaInterruptor } from '@/components/profile/FilaInterruptor';
@@ -30,8 +30,8 @@ export function FormularioDireccion({
   const [predeterminada, setPredeterminada] = useState(inicial?.predeterminada ?? false);
   const [intentado, setIntentado] = useState(false);
 
-  const referenciaDistrito = useRef<TextInput>(null);
-  const referenciaReferencia = useRef<TextInput>(null);
+  const referenciaDistrito = useRef<TextInputInstance>(null);
+  const referenciaReferencia = useRef<TextInputInstance>(null);
 
   const errores = intentado
     ? validarDatosDireccion({ direccion, distrito, predeterminada })

@@ -1,3 +1,4 @@
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import type { OrigenAsistente, ProductoChatResultado } from '@/types';
 
@@ -49,11 +50,26 @@ export const servicioAgente = {
     });
 
     if (error) {
-      throw new Error(
-        error.message === 'Failed to fetch' || error.name === 'FunctionsFetchError'
-          ? 'No se pudo contactar al asistente. Revisa tu conexión a internet.'
-          : `El asistente no pudo responder: ${error.message}`,
-      );
+      if (error.message === 'Failed to fetch' || error.name === 'FunctionsFetchError') {
+        throw new Error('No se pudo contactar al asistente. Revisa tu conexión a internet.');
+      }
+      // Con un status no-2xx, supabase-js solo da "Edge Function returned a
+      // non-2xx status code": el mensaje real de la función viene en el
+      // cuerpo de la respuesta (error.context), junto con el código HTTP.
+      if (error instanceof FunctionsHttpError) {
+        const respuesta = error.context as Response | undefined;
+        const estado = respuesta?.status;
+        let mensajeFuncion: string | undefined;
+        try {
+          mensajeFuncion = ((await respuesta?.json()) as RespuestaEdgeFunction | undefined)?.error;
+        } catch {
+          // Cuerpo vacío o no JSON (por ejemplo, un 401 o 404 de la plataforma).
+        }
+        throw new Error(
+          `${mensajeFuncion ?? 'El asistente no pudo responder.'}${estado ? ` (código ${estado})` : ''}`,
+        );
+      }
+      throw new Error(`El asistente no pudo responder: ${error.message}`);
     }
 
     if (!data || data.error) {

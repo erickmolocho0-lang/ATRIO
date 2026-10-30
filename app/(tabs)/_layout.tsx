@@ -1,4 +1,3 @@
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Tabs, usePathname } from 'expo-router';
 import { View } from 'react-native';
 import { BarraPestanas } from '@/components/navigation/BarraPestanas';
@@ -22,7 +21,7 @@ export default function LayoutPestanas() {
     <View style={{ flex: 1 }}>
       <Tabs
         screenOptions={{ headerShown: false }}
-        tabBar={(props) => <BarraPestanas {...(props as unknown as BottomTabBarProps)} />}
+        tabBar={(props) => <BarraPestanas {...props} />}
       >
         <Tabs.Screen name="index" options={{ title: 'Inicio' }} />
         <Tabs.Screen name="catalogo" options={{ title: 'Catálogo' }} />

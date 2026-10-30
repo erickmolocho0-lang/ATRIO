@@ -10,7 +10,7 @@ export function useDetalleProducto(id: string) {
 
   const [tallaSeleccionada, setTallaSeleccionada] = useState<string | null>(null);
   const [colorSeleccionado, setColorSeleccionado] = useState<string | null>(null);
-  const [errorSeleccion, setErrorSeleccion] = useState(false);
+  const [errorSeleccion, setErrorSeleccion] = useState<string | null>(null);
 
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +20,7 @@ export function useDetalleProducto(id: string) {
     setProducto(undefined);
     setTallaSeleccionada(null);
     setColorSeleccionado(null);
-    setErrorSeleccion(false);
+    setErrorSeleccion(null);
     setCargando(true);
     setError(null);
     servicioProductos
@@ -64,18 +64,24 @@ export function useDetalleProducto(id: string) {
 
   const seleccionarTalla = useCallback((talla: string) => {
     setTallaSeleccionada(talla);
-    setErrorSeleccion(false);
+    setErrorSeleccion(null);
   }, []);
 
   const seleccionarColor = useCallback((colorId: string) => {
     setColorSeleccionado(colorId);
-    setErrorSeleccion(false);
+    setErrorSeleccion(null);
   }, []);
 
   const agregarAlCarrito = useCallback((): boolean => {
     if (!producto) return false;
+    // Se llega acá con productos inactivos desde carrito o favoritos
+    // (obtenerProductoPorId no filtra por `activo`).
+    if (!producto.activo) {
+      setErrorSeleccion('Este producto ya no está disponible.');
+      return false;
+    }
     if (!tallaSeleccionada || !colorSeleccionado || !varianteActual || varianteActual.stock <= 0) {
-      setErrorSeleccion(true);
+      setErrorSeleccion('Selecciona talla y color para continuar.');
       return false;
     }
     agregarItem(producto, varianteActual.id, 1);

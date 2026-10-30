@@ -8,6 +8,9 @@ import { useTema } from '@/hooks/useTema';
 const ITEMS = [
   { ruta: '/admin', etiqueta: 'Dashboard', icono: 'grid-outline' },
   { ruta: '/admin/productos', etiqueta: 'Productos', icono: 'shirt-outline' },
+  { ruta: '/admin/categorias', etiqueta: 'Categorías', icono: 'pricetags-outline' },
+  { ruta: '/admin/colores', etiqueta: 'Colores', icono: 'color-palette-outline' },
+  { ruta: '/admin/campanas', etiqueta: 'Campañas', icono: 'megaphone-outline' },
   { ruta: '/admin/pedidos', etiqueta: 'Pedidos', icono: 'receipt-outline' },
   { ruta: '/admin/reportes', etiqueta: 'Reportes', icono: 'bar-chart-outline' },
 ] as const;

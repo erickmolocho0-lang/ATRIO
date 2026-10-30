@@ -14,7 +14,13 @@ export interface ResumenCheckout extends ResumenCompra {
 }
 
 export interface ProblemaCheckout {
-  codigo: 'carrito-vacio' | 'sin-metodo-entrega' | 'sin-direccion' | 'cantidad-invalida' | 'sin-stock';
+  codigo:
+    | 'carrito-vacio'
+    | 'sin-metodo-entrega'
+    | 'sin-direccion'
+    | 'cantidad-invalida'
+    | 'sin-stock'
+    | 'producto-inactivo';
   mensaje: string;
 }
 

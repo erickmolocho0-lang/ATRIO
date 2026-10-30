@@ -21,7 +21,7 @@ export function useAdminProductos() {
     setError(null);
     try {
       const [productosCargados, categoriasCargadas] = await Promise.all([
-        servicioProductos.obtenerProductos(),
+        servicioProductos.obtenerProductosAdmin(),
         servicioProductos.obtenerCategorias(),
       ]);
       setProductos(productosCargados);
@@ -59,10 +59,21 @@ export function useAdminProductos() {
 
   const alternarActivo = useCallback(
     async (id: string) => {
-      await servicioProductos.alternarActivo(id);
-      await recargar();
+      // Se reemplaza solo esa fila en su lugar, sin recargar toda la lista:
+      // así el producto no cambia de posición al activarlo o desactivarlo.
+      // El cambio se ve al instante y se revierte si Supabase lo rechaza.
+      const invertir = (previos: Producto[]) =>
+        previos.map((p) => (p.id === id ? { ...p, activo: !p.activo } : p));
+      setProductos(invertir);
+      try {
+        const actualizado = await servicioProductos.alternarActivo(id);
+        setProductos((previos) => previos.map((p) => (p.id === id ? actualizado : p)));
+      } catch (err) {
+        setProductos(invertir);
+        setError(err instanceof Error ? err.message : 'No se pudo cambiar el estado del producto.');
+      }
     },
-    [recargar],
+    [],
   );
 
   return {

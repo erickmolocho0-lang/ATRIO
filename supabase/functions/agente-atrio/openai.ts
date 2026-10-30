@@ -1,9 +1,9 @@
-// Modelo configurable por secreto de Supabase (`OPENAI_MODEL`). El nombre
-// pedido por Yeiner es "GPT-5.6 Luna": no es un id de modelo publicado por
-// OpenAI al momento de escribir esto, así que se deja como valor por
-// defecto configurable — si OpenAI cambia el id real, se actualiza el
-// secreto sin tocar código. Ver auditoría final.
-const MODELO_POR_DEFECTO = 'gpt-5.6-luna';
+// Modelo configurable por secreto de Supabase (`OPENAI_MODEL`). "Luna" es el
+// nombre de la asistente, no un modelo: el valor por defecto antes era
+// 'gpt-5.6-luna', que no es un id publicado por OpenAI y hacía fallar cada
+// llamada si no se definía el secreto. Por defecto se usa un modelo público;
+// para cambiarlo basta con actualizar OPENAI_MODEL, sin tocar código.
+const MODELO_POR_DEFECTO = 'gpt-4o-mini';
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 
 export interface MensajeOpenAI {

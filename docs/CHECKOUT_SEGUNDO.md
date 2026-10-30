@@ -1,6 +1,8 @@
+> Actualización del 30 de octubre de 2026: instalador ejecutado por Segundo y estructura reconocida en la API remota. Las secciones de activación describen el procedimiento; no debe repetirse el instalador. Falta la prueba funcional con sesión.
+
 # Checkout de Segundo: implementación y activación
 
-El código de las cinco tareas de Segundo está implementado en segundo-checkout. La activación remota y la comprobación con sesión de la app siguen pendientes; no se considera terminada la prueba de cobro.
+El código de las cinco tareas de Segundo está implementado en segundo-checkout. Segundo ejecutó el instalador completo en Supabase y compartió el resultado Success. La API ya reconoce las tablas, columnas y funciones nuevas; la comprobación de escritura con sesión y la prueba de cobro siguen pendientes.
 
 ## Comportamiento implementado
 
@@ -60,3 +62,7 @@ La pantalla de cupones explica que falta habilitar la actualizacion. Cotizar, co
 - En Cupones, si falla la carga, se muestra el error y Reintentar; no se muestra el formulario para crear ni se afirma que la tabla esté vacía.
 
 Referencia técnica para la selección de funciones por argumentos: [PostgREST, funciones RPC](https://docs.postgrest.org/en/stable/references/api/functions.html). Las firmas difieren en los nombres y cantidad de argumentos, sin valores por defecto en la versión nueva.
+
+## Activación remota comprobada después del instalador
+
+Segundo compartió la captura Success. No rows returned. Se verificaron sin sesión las columnas de cupones (incluidos usos máximos/actuales), destinatario y datos del pedido, y las funciones cotizar_checkout, validar_cupon y guardar_direccion_checkout. La API reconoce tanto la llamada anterior de Hans de tres parámetros como la nueva de seis, sin errores de caché ni ambigüedad. Todas rechazan correctamente al rol anónimo con 42501; no se crearon pedidos ni se consultaron registros. Esto comprueba la disponibilidad de la estructura y no sustituye una prueba con una sesión autenticada ni un pago. La creación del índice queda respaldada por la ejecución correcta del instalador transaccional facilitado; no se inspeccionó directamente el catálogo remoto desde la API.

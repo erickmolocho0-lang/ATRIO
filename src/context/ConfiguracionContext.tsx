@@ -7,9 +7,7 @@ export interface PreferenciasConfiguracion {
   modoOscuro: boolean;
   correosPromocionales: boolean;
   biometria: boolean;
-  // Solo una preferencia de qué opción pre-seleccionar en /pago — NUNCA un
-  // número de tarjeta ni CVV, eso no se guarda en ningún lado (ver
-  // app/metodos-pago.tsx para la decisión completa).
+  // Qué método aparece marcado en /pago. Nunca datos de tarjeta.
   metodoPagoPreferido: MetodoPago | null;
 }
 

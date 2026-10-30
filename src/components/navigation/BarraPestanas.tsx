@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type { Tabs } from 'expo-router';
+import type { ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ESPACIO, MEDIDAS, TIPOGRAFIA } from '@/constants/theme';
@@ -22,7 +23,11 @@ const ETIQUETAS: Record<string, string> = {
   perfil: 'Perfil',
 };
 
-export function BarraPestanas({ state, navigation }: BottomTabBarProps) {
+// Props que expo-router (SDK 58) le pasa a `tabBar`: ya no incluyen
+// `navigation`, sino `emitter` y `navigateToTab`.
+export type PropiedadesBarraPestanas = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
+
+export function BarraPestanas({ state, emitter, navigateToTab }: PropiedadesBarraPestanas) {
   const insets = useSafeAreaInsets();
   const { contador } = useCarrito();
   const { colores } = useTema();
@@ -45,13 +50,13 @@ export function BarraPestanas({ state, navigation }: BottomTabBarProps) {
         const color = activo ? colores.tinta : colores.tinta42;
 
         const alPresionar = () => {
-          const evento = navigation.emit({
+          const evento = emitter.emit({
             type: 'tabPress',
             target: ruta.key,
             canPreventDefault: true,
           });
           if (!activo && !evento.defaultPrevented) {
-            navigation.navigate(ruta.name);
+            navigateToTab(ruta.key);
           }
         };
 

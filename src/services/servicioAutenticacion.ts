@@ -169,6 +169,8 @@ export const servicioAutenticacion = {
   // Supabase — así la huella puede volver a entrar sin pedir correo y
   // contraseña de nuevo. Sin biometría activa, es un cierre de sesión real.
   async cerrarSesion(): Promise<void> {
+    // Chats guardados de Luna (de cualquier usuario y del invitado).
+    await servicioAlmacenamiento.eliminarDatosConPrefijo(CLAVES_ALMACENAMIENTO.chatLuna);
     const usuarioIdBiometria = await servicioAlmacenamiento.obtenerDato<string>(
       CLAVES_ALMACENAMIENTO.usuarioBiometria,
     );

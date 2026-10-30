@@ -5,6 +5,7 @@ import { servicioProductos } from '@/services/servicioProductos';
 import type { DatosPago, ProblemaCheckout, Producto } from '@/types';
 import {
   detectarProblemasCantidad,
+  detectarProblemasInactivos,
   detectarProblemasSeleccion,
   detectarProblemasStock,
 } from '@/utils/checkout';
@@ -40,7 +41,7 @@ export function useCheckout() {
     for (const producto of encontrados) {
       if (producto) actuales.set(producto.id, producto);
     }
-    return detectarProblemasStock(items, actuales);
+    return [...detectarProblemasInactivos(items, actuales), ...detectarProblemasStock(items, actuales)];
   }, [items]);
 
   useEffect(() => {

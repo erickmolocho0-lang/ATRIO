@@ -18,7 +18,7 @@ async function obtenerPedidosDesdeElModuloDePedidos(): Promise<PedidoReciente[]>
 
 export const servicioAdmin = {
   async obtenerResumenDashboard(): Promise<ResumenDashboardAdmin> {
-    const productos = await servicioProductos.obtenerProductos();
+    const productos = await servicioProductos.obtenerProductosAdmin();
     const pedidos = await obtenerPedidosDesdeElModuloDePedidos();
 
     const totalVentas = pedidos.reduce((acumulado, pedido) => acumulado + pedido.total, 0);
@@ -41,7 +41,7 @@ export const servicioAdmin = {
   },
 
   async obtenerProductosStockBajo(): Promise<ProductoStockBajo[]> {
-    const productos = await servicioProductos.obtenerProductos();
+    const productos = await servicioProductos.obtenerProductosAdmin();
     const filas: ProductoStockBajo[] = [];
 
     for (const producto of productos) {

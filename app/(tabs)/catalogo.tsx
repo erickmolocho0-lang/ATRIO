@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { CampoBusqueda } from '@/components/common/CampoBusqueda';
@@ -36,6 +36,7 @@ export default function PantallaCatalogo() {
     contadorResultados,
     hayMas,
     cargarMas,
+    cargandoMas,
   } = catalogo;
 
   useEffect(() => {
@@ -112,6 +113,13 @@ export default function PantallaCatalogo() {
             />
           </View>
         )}
+        ListFooterComponent={
+          cargandoMas ? (
+            <View style={styles.pieCargando}>
+              <ActivityIndicator color={colores.textoSecundario} size="small" />
+            </View>
+          ) : undefined
+        }
         ListEmptyComponent={
           <EstadoVacio
             titulo={`Sin resultados para «${terminoBusqueda.trim() || nombreCategoriaActiva.toLowerCase()}»`}
@@ -170,4 +178,5 @@ const styles = StyleSheet.create({
   },
   filaRejilla: { gap: MEDIDAS.gapTarjetas },
   celda: { flex: 1, marginBottom: MEDIDAS.gapTarjetas },
+  pieCargando: { paddingVertical: ESPACIO.base, alignItems: 'center' },
 });

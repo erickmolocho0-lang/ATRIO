@@ -13,6 +13,8 @@ export const CLAVES_ALMACENAMIENTO = {
   direcciones: 'atrio.direcciones',
   pedidos: 'atrio.pedidos',
   tarjetas: 'atrio.tarjetas',
+  // Prefijo: la clave real es `${chatLuna}.${usuarioId | 'invitado'}.${origen}`.
+  chatLuna: 'atrio.chat.luna',
 } as const;
 
 // SecureStore limita cada valor a ~2 KB y la sesión de Supabase suele pesar más: se guarda en fragmentos.
@@ -98,6 +100,15 @@ export const servicioAlmacenamiento = {
   async eliminarDato(clave: string): Promise<void> {
     try {
       await AsyncStorage.removeItem(clave);
+    } catch {
+    }
+  },
+
+  async eliminarDatosConPrefijo(prefijo: string): Promise<void> {
+    try {
+      const claves = await AsyncStorage.getAllKeys();
+      const aBorrar = claves.filter((clave) => clave.startsWith(prefijo));
+      if (aBorrar.length > 0) await AsyncStorage.multiRemove(aBorrar);
     } catch {
     }
   },

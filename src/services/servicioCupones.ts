@@ -24,12 +24,12 @@ export const servicioCupones = {
   },
   async listar(): Promise<Cupon[]> {
     const { data, error } = await cliente().from('cupones').select('*').order('codigo');
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(error.code === 'PGRST205' || error.code === '42P01' ? 'Los cupones aún no están habilitados. Falta aplicar la actualización de la tienda.' : error.message);
     return (data ?? []).map((c) => ({ ...c, porcentaje: Number(c.porcentaje), minimo_compra: Number(c.minimo_compra) }));
   },
   async guardar(cupon: Cupon, nuevo = false): Promise<void> {
     const consulta = nuevo ? cliente().from('cupones').insert(cupon) : cliente().from('cupones').update(cupon).eq('codigo', cupon.codigo);
     const { error } = await consulta.select('codigo').single();
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(error.code === 'PGRST205' || error.code === '42P01' ? 'Los cupones aún no están habilitados. Falta aplicar la actualización de la tienda.' : error.message);
   },
 };

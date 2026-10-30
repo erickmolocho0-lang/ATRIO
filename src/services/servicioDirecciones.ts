@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { consultarLecturaCompatible } from '@/utils/compatibilidadLectura';
 import type { DatosDireccion, Direccion } from '@/types';
 
 function cliente() {
@@ -23,6 +24,8 @@ export function mapearDireccion(fila: FilaDireccion, usuarioId: string | null): 
 
 const columnas = 'id, usuario_id, etiqueta, direccion, distrito, referencia, predeterminada, zona_id, destinatario, telefono, zonas_entrega(nombre)';
 
+const columnasAnteriores = columnas.replace(', destinatario, telefono', '');
+
 async function usuarioId(): Promise<string> {
   const { data, error } = await cliente().auth.getUser();
   if (error || !data.user) throw new Error('Debes iniciar sesion para gestionar tus direcciones.');
@@ -44,7 +47,8 @@ async function guardar(datos: DatosDireccion, id?: string): Promise<Direccion> {
 export const servicioDirecciones = {
   async obtenerDirecciones(): Promise<Direccion[]> {
     const uid = await usuarioId();
-    const { data, error } = await cliente().from('direcciones').select(columnas).eq('usuario_id', uid).order('creado_en');
+    const { data, error } = await consultarLecturaCompatible((anterior) => cliente().from('direcciones')
+      .select(anterior ? columnasAnteriores : columnas).eq('usuario_id', uid).order('creado_en'), ['destinatario', 'telefono']);
     if (error) throw new Error(`No se pudieron cargar las direcciones: ${error.message}`);
     return (data as unknown as FilaDireccion[]).map((f) => mapearDireccion(f, uid));
   },

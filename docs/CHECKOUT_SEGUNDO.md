@@ -19,7 +19,7 @@ El código de las cinco tareas de Segundo está implementado en segundo-checkout
 
 - npm run typecheck correcto.
 - ESLint correcto en los archivos de checkout modificados, incluido CarritoContext. Persisten los dos errores anteriores de main en el listado/detalle de pedidos; no se han modificado en esta entrega.
-- npm test --prefix tests/delivery: 26 comprobaciones de delivery y 29 de checkout, todas correctas.
+- npm test --prefix tests/delivery: 26 comprobaciones de delivery, 29 de checkout y 11 de compatibilidad de lectura (66 en total). Las once nuevas usan Supabase simulado y verifican el caso de migracion pendiente, filtros conservados, lecturas posteriores a la migracion y ausencia de fallback para cobros.
 - Las pruebas aplican el esquema real y las migraciones de seguridad y pedidos de Hans/Alexander antes de la nuestra. Comprueban precios, cupones, stock, rechazo de importes manipulados, propiedad de direcciones, rollback posterior al cambio de predeterminada, historial, cancelación con reposición de stock y anonimización.
 - Solo pg_cron está sustituido por un stub en PGlite. No se ha probado su ejecución programada real, ni la firma del webhook, ni una transacción de Mercado Pago.
 - Exportación web correcta: 41 rutas, incluidas /admin/cupones, /admin/entregas, /checkout y /pago.
@@ -44,3 +44,9 @@ Se realizaron solicitudes con la clave anónima pública, sin sesión de cliente
 7. Después de esa validación, el coordinador puede integrar segundo-checkout a main. Esta entrega solo se publica en la rama de Segundo.
 
 La revisión del código y las pruebas locales están completas. La ejecución de la migración y la validación remota con sesión no se sustituyen por suposiciones sobre lo que haya desplegado otro integrante.
+
+## Compatibilidad mientras falta la migracion
+
+Se corrigio la lectura del panel: si faltan exclusivamente cupon_codigo/datos_entrega o destinatario/telefono (42703/PGRST204), se repite la consulta con las columnas anteriores. Se conservan los filtros por usuario y numero de pedido. Los errores de permisos, red u otras columnas no activan este reintento. Cada lectura vuelve a intentar el esquema nuevo para adoptar la migracion cuando este disponible.
+
+La pantalla de cupones explica que falta habilitar la actualizacion. Cotizar, confirmar y guardar direcciones conservan las funciones nuevas y no usan escrituras antiguas como alternativa. Esta compatibilidad permite consultar los pedidos existentes y no equivale a activar el nuevo checkout. No se modifico Supabase remoto para resolver el error.

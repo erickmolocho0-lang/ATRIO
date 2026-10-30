@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { consultarLecturaCompatible } from '@/utils/compatibilidadLectura';
 import { mapearDireccion, type FilaDireccion } from './servicioDirecciones';
 import type {
   CambioEstado,
@@ -68,8 +69,8 @@ interface FilaPedido {
   creado_en: string;
   metodo_entrega_id: string | null;
   costo_envio: number;
-  cupon_codigo: string | null;
-  datos_entrega: { metodo: MetodoEntrega; direccion: FilaDireccion | null } | null;
+  cupon_codigo?: string | null;
+  datos_entrega?: { metodo: MetodoEntrega; direccion: FilaDireccion | null } | null;
   items_pedido: FilaItemPedido[] | null;
   pagos: FilaPago | FilaPago[] | null;
 }
@@ -174,6 +175,9 @@ const SELECT_PEDIDO = `
   pagos ( metodo, estado )
 `;
 
+const SELECT_PEDIDO_ANTERIOR = SELECT_PEDIDO.replace(', cupon_codigo, datos_entrega', '');
+const COLUMNAS_DIRECCION = 'id, etiqueta, direccion, distrito, referencia, predeterminada, zona_id';
+
 // direcciones/perfiles no tienen FK directa hacia `pedidos` que PostgREST
 // pueda embeber solo, así que se resuelven con una segunda consulta y se
 // arman en memoria — igual que el conteo de categorías en servicioProductos.
@@ -184,7 +188,8 @@ async function enriquecerPedidos(filas: FilaPedido[]): Promise<Pedido[]> {
 
   const [{ data: filasDireccion }, { data: filasPerfil }] = await Promise.all([
     idsDireccion.length > 0
-      ? cliente.from('direcciones').select('id, etiqueta, direccion, distrito, referencia, predeterminada, zona_id, destinatario, telefono').in('id', idsDireccion)
+      ? consultarLecturaCompatible((anterior) => cliente.from('direcciones')
+        .select(anterior ? COLUMNAS_DIRECCION : `${COLUMNAS_DIRECCION}, destinatario, telefono`).in('id', idsDireccion), ['destinatario', 'telefono'])
       : Promise.resolve({ data: [] as unknown[] }),
     idsUsuario.length > 0
       ? cliente.from('perfiles').select('id, nombre').in('id', idsUsuario)
@@ -237,30 +242,27 @@ export const servicioPedidos = {
   // Sin filtro de usuario: RLS decide qué ve — el cliente solo los suyos, el
   // administrador todos (política ya definida en la auditoría/SQL entregado).
   async obtenerPedidos(): Promise<Pedido[]> {
-    const { data, error } = await requerirSupabase()
-      .from('pedidos')
-      .select(SELECT_PEDIDO)
-      .order('creado_en', { ascending: false });
+    const { data, error } = await consultarLecturaCompatible((anterior) => requerirSupabase()
+      .from('pedidos').select(anterior ? SELECT_PEDIDO_ANTERIOR : SELECT_PEDIDO)
+      .order('creado_en', { ascending: false }), ['cupon_codigo', 'datos_entrega']);
     if (error) throw new Error(`No se pudieron cargar los pedidos: ${error.message}`);
     return enriquecerPedidos((data ?? []) as unknown as FilaPedido[]);
   },
 
   async obtenerPedidosDeUsuario(usuarioId: string): Promise<Pedido[]> {
-    const { data, error } = await requerirSupabase()
-      .from('pedidos')
-      .select(SELECT_PEDIDO)
+    const { data, error } = await consultarLecturaCompatible((anterior) => requerirSupabase()
+      .from('pedidos').select(anterior ? SELECT_PEDIDO_ANTERIOR : SELECT_PEDIDO)
       .eq('usuario_id', usuarioId)
-      .order('creado_en', { ascending: false });
+      .order('creado_en', { ascending: false }), ['cupon_codigo', 'datos_entrega']);
     if (error) throw new Error(`No se pudieron cargar tus pedidos: ${error.message}`);
     return enriquecerPedidos((data ?? []) as unknown as FilaPedido[]);
   },
 
   async obtenerPedido(numero: string): Promise<Pedido | null> {
-    const { data, error } = await requerirSupabase()
-      .from('pedidos')
-      .select(SELECT_PEDIDO)
+    const { data, error } = await consultarLecturaCompatible((anterior) => requerirSupabase()
+      .from('pedidos').select(anterior ? SELECT_PEDIDO_ANTERIOR : SELECT_PEDIDO)
       .eq('numero', numero)
-      .maybeSingle();
+      .maybeSingle(), ['cupon_codigo', 'datos_entrega']);
     if (error) throw new Error(`No se pudo cargar el pedido "${numero}": ${error.message}`);
     if (!data) return null;
     const [pedido] = await enriquecerPedidos([data as unknown as FilaPedido]);

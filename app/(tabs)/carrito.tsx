@@ -6,12 +6,15 @@ import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { CampoCupon } from '@/components/cart/CampoCupon';
 import { FilaItemCarrito } from '@/components/cart/ItemCarrito';
 import { ResumenCarrito } from '@/components/cart/ResumenCarrito';
-import { COLORS } from '@/constants/colors';
+import type { NombreColor } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
 import { ESPACIO, MEDIDAS, TIPOGRAFIA } from '@/constants/theme';
 import { useCarrito } from '@/hooks/useCarrito';
 import { formatearSoles } from '@/utils/moneda';
 
 export default function PantallaCarrito() {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   const insets = useSafeAreaInsets();
   const {
     items,
@@ -91,13 +94,13 @@ export default function PantallaCarrito() {
   );
 }
 
-const styles = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: COLORS.papel },
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
+  pantalla: { flex: 1, backgroundColor: colores.papel },
   itemsCabecera: {
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 11,
     letterSpacing: 1,
-    color: COLORS.textoSecundario,
+    color: colores.textoSecundario,
   },
   lista: { paddingHorizontal: MEDIDAS.margenLateral, paddingBottom: ESPACIO.xxl },
   separador: { height: MEDIDAS.separacionSecciones },
@@ -106,13 +109,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: MEDIDAS.margenLateral,
     paddingTop: ESPACIO.md,
     borderTopWidth: 1,
-    borderTopColor: COLORS.borde,
-    backgroundColor: COLORS.papel,
+    borderTopColor: colores.borde,
+    backgroundColor: colores.papel,
   },
   botonPagar: {
     height: 54,
     borderRadius: 9,
-    backgroundColor: COLORS.tinta,
+    backgroundColor: colores.tinta,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -123,11 +126,11 @@ const styles = StyleSheet.create({
     fontFamily: TIPOGRAFIA.titulo,
     fontSize: 13,
     letterSpacing: 1,
-    color: COLORS.papel,
+    color: colores.papel,
   },
   botonPagarImporte: {
     fontFamily: TIPOGRAFIA.monoFuerte,
     fontSize: 14,
-    color: COLORS.papel,
+    color: colores.papel,
   },
 });

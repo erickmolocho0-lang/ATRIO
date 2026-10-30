@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import type { NombreColor } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 
 interface PropiedadesCampoCupon {
@@ -11,6 +12,8 @@ interface PropiedadesCampoCupon {
 }
 
 export function CampoCupon({ codigoAplicado, alAplicar, alQuitar }: PropiedadesCampoCupon) {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   const [texto, setTexto] = useState('');
   const [error, setError] = useState(false);
 
@@ -27,7 +30,7 @@ export function CampoCupon({ codigoAplicado, alAplicar, alQuitar }: PropiedadesC
   if (codigoAplicado) {
     return (
       <View style={styles.aplicado}>
-        <Ionicons name="pricetag" size={15} color={COLORS.arcilla} />
+        <Ionicons name="pricetag" size={15} color={colores.arcilla} />
         <Text style={styles.textoAplicado}>{codigoAplicado}</Text>
         <Pressable onPress={alQuitar} hitSlop={10} accessibilityRole="button">
           <Text style={styles.quitar}>Quitar</Text>
@@ -47,7 +50,7 @@ export function CampoCupon({ codigoAplicado, alAplicar, alQuitar }: PropiedadesC
             if (error) setError(false);
           }}
           placeholder="Código de descuento"
-          placeholderTextColor={COLORS.tinta45}
+          placeholderTextColor={colores.tinta45}
           autoCapitalize="characters"
           autoCorrect={false}
         />
@@ -60,36 +63,36 @@ export function CampoCupon({ codigoAplicado, alAplicar, alQuitar }: PropiedadesC
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
   fila: { flexDirection: 'row', gap: ESPACIO.sm },
   entrada: {
     flex: 1,
     height: MEDIDAS.areaTactilMinima,
     paddingHorizontal: ESPACIO.md,
-    backgroundColor: COLORS.blanco,
+    backgroundColor: colores.blanco,
     borderWidth: 1,
-    borderColor: COLORS.borde,
+    borderColor: colores.borde,
     borderRadius: RADIO.imagen,
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 13,
-    color: COLORS.tinta,
+    color: colores.tinta,
   },
-  entradaError: { borderColor: COLORS.arcilla },
+  entradaError: { borderColor: colores.arcilla },
   boton: {
     minHeight: MEDIDAS.areaTactilMinima,
     paddingHorizontal: ESPACIO.lg,
     borderWidth: 1,
-    borderColor: COLORS.tinta,
+    borderColor: colores.tinta,
     borderRadius: RADIO.imagen,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  botonTexto: { fontFamily: TIPOGRAFIA.titulo, fontSize: 12, letterSpacing: 1, color: COLORS.tinta },
+  botonTexto: { fontFamily: TIPOGRAFIA.titulo, fontSize: 12, letterSpacing: 1, color: colores.tinta },
   error: {
     marginTop: ESPACIO.sm,
     fontFamily: TIPOGRAFIA.etiqueta,
     fontSize: 11.5,
-    color: COLORS.arcilla,
+    color: colores.arcilla,
   },
   aplicado: {
     flexDirection: 'row',
@@ -98,19 +101,19 @@ const styles = StyleSheet.create({
     minHeight: MEDIDAS.areaTactilMinima,
     paddingHorizontal: ESPACIO.md,
     borderWidth: 1,
-    borderColor: COLORS.borde,
+    borderColor: colores.borde,
     borderRadius: RADIO.imagen,
   },
   textoAplicado: {
     flex: 1,
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 13,
-    color: COLORS.tinta,
+    color: colores.tinta,
   },
   quitar: {
     fontFamily: TIPOGRAFIA.etiqueta,
     fontSize: 12,
-    color: COLORS.textoSecundario,
+    color: colores.textoSecundario,
     textDecorationLine: 'underline',
   },
 });

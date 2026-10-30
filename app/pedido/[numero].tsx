@@ -8,7 +8,8 @@ import { FilaResumenItem } from '@/components/checkout/FilaResumenItem';
 import { TarjetaDireccion } from '@/components/checkout/TarjetaDireccion';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { EstadoVacio } from '@/components/common/EstadoVacio';
-import { COLORS } from '@/constants/colors';
+import type { NombreColor } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { nombreEstadoPedido, siguientesEstados } from '@/data/estadosPedido';
@@ -17,6 +18,8 @@ import { servicioPedidos } from '@/services/servicioPedidos';
 import type { CambioEstado, EstadoPedido, Pedido } from '@/types';
 
 function TituloSeccion({ texto }: { texto: string }) {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   return <Text style={styles.tituloSeccion}>{texto}</Text>;
 }
 
@@ -25,6 +28,8 @@ function formatearFecha(fecha: string) {
 }
 
 function FilaSeguimiento({ texto, fecha }: { texto: string; fecha: string }) {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   return (
     <View style={styles.filaSeguimiento}>
       <View style={styles.punto} />
@@ -35,6 +40,8 @@ function FilaSeguimiento({ texto, fecha }: { texto: string; fecha: string }) {
 }
 
 export default function PantallaDetallePedido() {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   const { numero } = useLocalSearchParams<{ numero: string }>();
   const { usuario } = useAuth();
   const esAdministrador = usuario?.rol === 'administrador';
@@ -65,7 +72,7 @@ export default function PantallaDetallePedido() {
   if (cargando) {
     return (
       <SafeAreaView style={[styles.pantalla, styles.centrado]}>
-        <ActivityIndicator color={COLORS.tinta} />
+        <ActivityIndicator color={colores.tinta} />
       </SafeAreaView>
     );
   }
@@ -188,8 +195,8 @@ export default function PantallaDetallePedido() {
   );
 }
 
-const styles = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: COLORS.papel },
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
+  pantalla: { flex: 1, backgroundColor: colores.papel },
   centrado: { alignItems: 'center', justifyContent: 'center' },
   contenido: {
     paddingHorizontal: MEDIDAS.margenLateral,
@@ -202,33 +209,33 @@ const styles = StyleSheet.create({
     fontFamily: TIPOGRAFIA.monoFuerte,
     fontSize: 11,
     letterSpacing: 1.2,
-    color: COLORS.textoSecundario,
+    color: colores.textoSecundario,
   },
   filaSeguimiento: { flexDirection: 'row', alignItems: 'center', gap: ESPACIO.md },
-  punto: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.tinta },
+  punto: { width: 8, height: 8, borderRadius: 4, backgroundColor: colores.tinta },
   fechaSeguimiento: {
     marginLeft: 'auto',
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 11,
-    color: COLORS.textoSecundario,
+    color: colores.textoSecundario,
   },
-  texto: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: COLORS.tinta },
+  texto: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: colores.tinta },
   opcionesEstado: { flexDirection: 'row', flexWrap: 'wrap', gap: ESPACIO.sm },
   opcionEstado: {
     paddingHorizontal: ESPACIO.md,
     paddingVertical: ESPACIO.sm,
     borderWidth: 1,
-    borderColor: COLORS.borde,
+    borderColor: colores.borde,
     borderRadius: RADIO.chip,
-    backgroundColor: COLORS.blanco,
+    backgroundColor: colores.blanco,
   },
-  textoOpcionEstado: { fontFamily: TIPOGRAFIA.mono, fontSize: 12, color: COLORS.tinta },
+  textoOpcionEstado: { fontFamily: TIPOGRAFIA.mono, fontSize: 12, color: colores.tinta },
   estado: {
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 11,
     letterSpacing: 0.5,
-    color: COLORS.arcilla,
-    backgroundColor: COLORS.arcilla10,
+    color: colores.arcilla,
+    backgroundColor: colores.arcilla10,
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: RADIO.chip,

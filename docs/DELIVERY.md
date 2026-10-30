@@ -1,6 +1,6 @@
 # Delivery: siguiente paso para Segundo
 
-La primera parte ya está preparada en la rama local `segundo-checkout`: sección **Delivery** del panel administrativo, tablas por zona/localidad y guardado de tarifas en una sola operación.
+La primera parte ya está preparada en la rama `segundo-checkout`: sección **Delivery** del panel administrativo, tablas por zona/localidad y guardado de tarifas en una sola operación.
 
 La app compiló para web, TypeScript pasó y se completaron 26 comprobaciones locales de datos y permisos. Segundo confirmó la ejecución manual en Supabase y compartió la comprobación de 3 modalidades, 9 zonas y 0 tarifas. Segundo también comprobó la versión web local con una cuenta administradora real: cargó Delivery, abrió La Palma y guardó sin cambiar datos, con la zona inactiva y tarifas vacías. La app devolvió «Los cambios de delivery se guardaron».
 
@@ -32,9 +32,9 @@ Puede editar precios o desactivar una zona posteriormente. Los horarios son info
 
 ## Qué queda después
 
-La pantalla de configuración guarda tarifas y cobertura, pero el checkout actual todavía usa los importes provisionales anteriores. La siguiente entrega conectará las direcciones, la selección de zona y el cálculo del envío al servidor. Eso se coordina con Hans en `confirmar_compra`, y debe conservar los cambios de productos inactivos de la rama de Yeiner.
+La pantalla de configuración guarda tarifas y cobertura, pero el checkout actual todavía usa los importes provisionales anteriores. La siguiente entrega conectará las direcciones, la selección de zona y el cálculo del envío al servidor. Hans ya incorporó a main el parámetro opcional `p_metodo_entrega_id` y las columnas `direcciones.zona_id`, `pedidos.metodo_entrega_id` y `pedidos.costo_envio`; falta conectarlos desde la app y comprobar su despliegue remoto. Se conserva el rechazo de productos inactivos de Yeiner y Hans. El diagnóstico actual está en [la revisión de integración](REVISION_INTEGRACION_2026-10-30.md).
 
-La entrega se sube únicamente a la rama segundo-checkout. No modifica pedidos, pagos, cuentas ni precios de ropa, y no incluye un pull request ni una actualización de main.
+La entrega se sube únicamente a la rama segundo-checkout, sin pull request ni actualización de main. La revisión del 30 de octubre incorpora los cambios del equipo y adapta los colores del flujo de compra al tema existente; no cambia la lógica de cobro ni los precios de ropa.
 
 ## Comprobación técnica
 
@@ -45,7 +45,7 @@ La entrega se sube únicamente a la rama segundo-checkout. No modifica pedidos, 
 - Nuevos permisos: solo una cuenta con el rol de aplicación `administrador` puede escribir. La lectura pública se limita a configuración activa.
 - El guardado de una zona y sus tarifas es transaccional y usa `SECURITY INVOKER` para respetar RLS.
 - Las pruebas usan el trigger de protección de perfiles.rol del esquema base de Alexander y verifican que un cliente no pueda convertirse en administrador. La lectura y el guardado básico con sesión administradora real se comprobaron en la versión web local. La creación de zonas, el guardado de precios, la activación y la prueba nativa con el equipo siguen pendientes; esta entrega no cambia políticas de perfiles.
-- El único archivo existente modificado es `src/components/admin/NavegacionAdmin.tsx`, al que se añade el acceso Delivery. El resto son archivos nuevos.
+- La entrega inicial solo modificaba `src/components/admin/NavegacionAdmin.tsx` entre los archivos existentes. La revisión del 30 de octubre también adapta al tema las pantallas y componentes del flujo de compra; consulta el informe de integración.
 - Se conserva sin modificaciones el esquema base incorporado por Alexander en main (3066713); la nueva migración lo complementa con permisos e inicialización de delivery.
 
 ## Prueba manual confirmada por Segundo

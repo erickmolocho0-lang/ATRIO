@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import type { NombreColor } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import type { Direccion } from '@/types';
 
@@ -21,6 +22,8 @@ export function TarjetaDireccion({
   alEditar,
   alEliminar,
 }: PropiedadesTarjetaDireccion) {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   return (
     <View style={[styles.contenedor, seleccionada && styles.seleccionada]}>
       <Pressable
@@ -34,7 +37,7 @@ export function TarjetaDireccion({
           <Ionicons
             name={seleccionada ? 'radio-button-on' : 'radio-button-off'}
             size={20}
-            color={seleccionada ? COLORS.tinta : COLORS.tinta40}
+            color={seleccionada ? colores.tinta : colores.tinta40}
           />
         ) : null}
         <View style={styles.textos}>
@@ -68,23 +71,23 @@ export function TarjetaDireccion({
           accessibilityRole="button"
           accessibilityLabel="Eliminar dirección"
         >
-          <Ionicons name="trash-outline" size={16} color={COLORS.arcilla} />
+          <Ionicons name="trash-outline" size={16} color={colores.arcilla} />
         </Pressable>
       ) : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
   contenedor: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.borde,
+    borderColor: colores.borde,
     borderRadius: RADIO.imagen,
-    backgroundColor: COLORS.blanco,
+    backgroundColor: colores.blanco,
   },
-  seleccionada: { borderColor: COLORS.tinta },
+  seleccionada: { borderColor: colores.tinta },
   principal: {
     flex: 1,
     flexDirection: 'row',
@@ -95,19 +98,19 @@ const styles = StyleSheet.create({
   },
   textos: { flex: 1, gap: 2 },
   filaTitulo: { flexDirection: 'row', alignItems: 'center', gap: ESPACIO.sm },
-  titulo: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: COLORS.tinta },
+  titulo: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: colores.tinta },
   chip: {
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 8.5,
     letterSpacing: 0.8,
-    color: COLORS.arcilla,
-    backgroundColor: COLORS.arcilla10,
+    color: colores.arcilla,
+    backgroundColor: colores.arcilla10,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 3,
   },
-  linea: { fontFamily: TIPOGRAFIA.cuerpo, fontSize: 13, color: COLORS.tinta },
-  referencia: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: COLORS.textoSecundario },
+  linea: { fontFamily: TIPOGRAFIA.cuerpo, fontSize: 13, color: colores.tinta },
+  referencia: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: colores.textoSecundario },
   editar: {
     minHeight: MEDIDAS.areaTactilMinima,
     justifyContent: 'center',
@@ -116,7 +119,7 @@ const styles = StyleSheet.create({
   editarTexto: {
     fontFamily: TIPOGRAFIA.etiqueta,
     fontSize: 12,
-    color: COLORS.textoSecundario,
+    color: colores.textoSecundario,
     textDecorationLine: 'underline',
   },
 });

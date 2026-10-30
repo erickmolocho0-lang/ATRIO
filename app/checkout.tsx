@@ -8,15 +8,20 @@ import { FilaResumenItem } from '@/components/checkout/FilaResumenItem';
 import { OpcionEntrega } from '@/components/checkout/OpcionEntrega';
 import { TarjetaDireccion } from '@/components/checkout/TarjetaDireccion';
 import { ResumenCarrito } from '@/components/cart/ResumenCarrito';
-import { COLORS } from '@/constants/colors';
+import type { NombreColor } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
 import { ESPACIO, MEDIDAS, TIPOGRAFIA } from '@/constants/theme';
 import { useCheckout } from '@/hooks/useCheckout';
 
 function TituloSeccion({ texto }: { texto: string }) {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   return <Text style={styles.tituloSeccion}>{texto}</Text>;
 }
 
 export default function PantallaCheckout() {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   const insets = useSafeAreaInsets();
   const {
     items,
@@ -132,8 +137,8 @@ export default function PantallaCheckout() {
   );
 }
 
-const styles = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: COLORS.papel },
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
+  pantalla: { flex: 1, backgroundColor: colores.papel },
   contenido: {
     paddingHorizontal: MEDIDAS.margenLateral,
     paddingBottom: ESPACIO.xxl,
@@ -149,13 +154,13 @@ const styles = StyleSheet.create({
     fontFamily: TIPOGRAFIA.monoFuerte,
     fontSize: 11,
     letterSpacing: 1.2,
-    color: COLORS.textoSecundario,
+    color: colores.textoSecundario,
   },
   enlace: {
     fontFamily: TIPOGRAFIA.etiqueta,
     fontSize: 11,
     letterSpacing: 0.6,
-    color: COLORS.tinta,
+    color: colores.tinta,
     textDecorationLine: 'underline',
   },
   listaOpciones: { gap: ESPACIO.sm },
@@ -163,19 +168,19 @@ const styles = StyleSheet.create({
   avisoDireccion: {
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 12,
-    color: COLORS.textoSecundario,
+    color: colores.textoSecundario,
   },
   avisos: { gap: ESPACIO.xs },
   aviso: {
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 11.5,
-    color: COLORS.arcilla,
+    color: colores.arcilla,
   },
   barraInferior: {
     paddingHorizontal: MEDIDAS.margenLateral,
     paddingTop: ESPACIO.md,
     borderTopWidth: 1,
-    borderTopColor: COLORS.borde,
-    backgroundColor: COLORS.papel,
+    borderTopColor: colores.borde,
+    backgroundColor: colores.papel,
   },
 });

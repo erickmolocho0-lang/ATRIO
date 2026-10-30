@@ -8,7 +8,8 @@ import { CampoTexto } from '@/components/common/CampoTexto';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { ResumenCarrito } from '@/components/cart/ResumenCarrito';
-import { COLORS } from '@/constants/colors';
+import type { NombreColor } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useCarrito } from '@/hooks/useCarrito';
@@ -20,6 +21,8 @@ import { metodosPago } from '@/data/metodosPago';
 import type { MetodoPago } from '@/types';
 
 export default function PantallaPago() {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   const insets = useSafeAreaInsets();
   const { usuario } = useAuth();
   const { vaciarCarrito } = useCarrito();
@@ -121,7 +124,7 @@ export default function PantallaPago() {
                 <Ionicons
                   name={seleccionado ? 'radio-button-on' : 'radio-button-off'}
                   size={20}
-                  color={seleccionado ? COLORS.tinta : COLORS.tinta40}
+                  color={seleccionado ? colores.tinta : colores.tinta40}
                 />
                 <View style={styles.textosOpcion}>
                   <Text style={styles.nombreOpcion}>{opcion.nombre}</Text>
@@ -172,8 +175,8 @@ export default function PantallaPago() {
   );
 }
 
-const styles = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: COLORS.papel },
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
+  pantalla: { flex: 1, backgroundColor: colores.papel },
   contenido: {
     paddingHorizontal: MEDIDAS.margenLateral,
     paddingBottom: ESPACIO.xxl,
@@ -184,7 +187,7 @@ const styles = StyleSheet.create({
     fontFamily: TIPOGRAFIA.monoFuerte,
     fontSize: 11,
     letterSpacing: 1.2,
-    color: COLORS.textoSecundario,
+    color: colores.textoSecundario,
     marginBottom: ESPACIO.xs,
   },
   opcion: {
@@ -195,19 +198,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: ESPACIO.base,
     paddingVertical: ESPACIO.md,
     borderWidth: 1,
-    borderColor: COLORS.borde,
+    borderColor: colores.borde,
     borderRadius: RADIO.imagen,
-    backgroundColor: COLORS.blanco,
+    backgroundColor: colores.blanco,
   },
-  opcionSeleccionada: { borderColor: COLORS.tinta },
+  opcionSeleccionada: { borderColor: colores.tinta },
   textosOpcion: { flex: 1, gap: 2 },
-  nombreOpcion: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: COLORS.tinta },
-  descripcionOpcion: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: COLORS.textoSecundario },
+  nombreOpcion: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: colores.tinta },
+  descripcionOpcion: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: colores.textoSecundario },
   barraInferior: {
     paddingHorizontal: MEDIDAS.margenLateral,
     paddingTop: ESPACIO.md,
     borderTopWidth: 1,
-    borderTopColor: COLORS.borde,
-    backgroundColor: COLORS.papel,
+    borderTopColor: colores.borde,
+    backgroundColor: colores.papel,
   },
 });

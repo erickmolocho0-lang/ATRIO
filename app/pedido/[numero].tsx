@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BotonPrimario } from '@/components/common/BotonPrimario';
 import { ResumenCarrito } from '@/components/cart/ResumenCarrito';
 import { FilaResumenItem } from '@/components/checkout/FilaResumenItem';
 import { TarjetaDireccion } from '@/components/checkout/TarjetaDireccion';
@@ -13,10 +14,24 @@ import { useAuth } from '@/context/AuthContext';
 import { nombreEstadoPedido, siguientesEstados } from '@/data/estadosPedido';
 import { nombreMetodoPago } from '@/data/metodosPago';
 import { servicioPedidos } from '@/services/servicioPedidos';
-import type { EstadoPedido, Pedido } from '@/types';
+import type { CambioEstado, EstadoPedido, Pedido } from '@/types';
 
 function TituloSeccion({ texto }: { texto: string }) {
   return <Text style={styles.tituloSeccion}>{texto}</Text>;
+}
+
+function formatearFecha(fecha: string) {
+  return new Date(fecha).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function FilaSeguimiento({ texto, fecha }: { texto: string; fecha: string }) {
+  return (
+    <View style={styles.filaSeguimiento}>
+      <View style={styles.punto} />
+      <Text style={styles.texto}>{texto}</Text>
+      <Text style={styles.fechaSeguimiento}>{formatearFecha(fecha)}</Text>
+    </View>
+  );
 }
 
 export default function PantallaDetallePedido() {
@@ -25,15 +40,18 @@ export default function PantallaDetallePedido() {
   const esAdministrador = usuario?.rol === 'administrador';
 
   const [pedido, setPedido] = useState<Pedido | null>(null);
+  const [historial, setHistorial] = useState<CambioEstado[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const cargarPedido = useCallback(() => {
     setCargando(true);
     setError(null);
-    servicioPedidos
-      .obtenerPedido(numero)
-      .then(setPedido)
+    Promise.all([servicioPedidos.obtenerPedido(numero), servicioPedidos.obtenerHistorial(numero)])
+      .then(([pedidoLeido, historialLeido]) => {
+        setPedido(pedidoLeido);
+        setHistorial(historialLeido);
+      })
       .catch((err) => {
         setError(err instanceof Error ? err.message : 'No se pudo cargar el pedido.');
       })
@@ -84,18 +102,27 @@ export default function PantallaDetallePedido() {
     if (!pedido) return;
     try {
       setPedido(await servicioPedidos.cambiarEstado(pedido.numero, estado));
+      setHistorial(await servicioPedidos.obtenerHistorial(pedido.numero));
     } catch (err) {
       Alert.alert('No se pudo cambiar el estado', err instanceof Error ? err.message : '');
     }
   }
 
+  // El cliente puede cancelar mientras el pedido no haya salido.
+  const clientePuedeCancelar =
+    !esAdministrador && (pedido.estado === 'pendiente_pago' || pedido.estado === 'preparado');
+
+  function confirmarCancelacion() {
+    Alert.alert('Cancelar pedido', `¿Seguro que quieres cancelar el pedido ${pedido?.numero}?`, [
+      { text: 'No', style: 'cancel' },
+      { text: 'Sí, cancelar', style: 'destructive', onPress: () => cambiarEstado('cancelado') },
+    ]);
+  }
+
   // Solo los estados a los que se puede pasar desde el actual.
   const estadosPermitidos = siguientesEstados[pedido.estado];
 
-  const fecha = new Date(pedido.fecha).toLocaleString('es-PE', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+  const fecha = formatearFecha(pedido.fecha);
 
   return (
     <SafeAreaView style={styles.pantalla} edges={['top']}>
@@ -126,6 +153,14 @@ export default function PantallaDetallePedido() {
         ) : null}
 
         <View style={styles.seccion}>
+          <TituloSeccion texto="SEGUIMIENTO" />
+          <FilaSeguimiento texto="Pedido realizado" fecha={pedido.fecha} />
+          {historial.map((cambio) => (
+            <FilaSeguimiento key={cambio.fecha} texto={nombreEstadoPedido[cambio.estado]} fecha={cambio.fecha} />
+          ))}
+        </View>
+
+        <View style={styles.seccion}>
           <TituloSeccion texto={`PRODUCTOS (${pedido.items.length})`} />
           {pedido.items.map((item) => (
             <FilaResumenItem key={item.varianteId} item={item} />
@@ -144,6 +179,10 @@ export default function PantallaDetallePedido() {
         </View>
 
         <ResumenCarrito resumen={pedido.resumen} envio={pedido.resumen.envio} />
+
+        {clientePuedeCancelar ? (
+          <BotonPrimario texto="CANCELAR PEDIDO" variante="contorno" onPress={confirmarCancelacion} />
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -163,6 +202,14 @@ const styles = StyleSheet.create({
     fontFamily: TIPOGRAFIA.monoFuerte,
     fontSize: 11,
     letterSpacing: 1.2,
+    color: COLORS.textoSecundario,
+  },
+  filaSeguimiento: { flexDirection: 'row', alignItems: 'center', gap: ESPACIO.md },
+  punto: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.tinta },
+  fechaSeguimiento: {
+    marginLeft: 'auto',
+    fontFamily: TIPOGRAFIA.mono,
+    fontSize: 11,
     color: COLORS.textoSecundario,
   },
   texto: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: COLORS.tinta },

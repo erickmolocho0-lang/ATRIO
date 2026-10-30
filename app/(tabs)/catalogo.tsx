@@ -118,7 +118,7 @@ export default function PantallaCatalogo() {
             <View style={styles.pieCargando}>
               <ActivityIndicator color={colores.textoSecundario} size="small" />
             </View>
-          ) : null
+          ) : undefined
         }
         ListEmptyComponent={
           <EstadoVacio

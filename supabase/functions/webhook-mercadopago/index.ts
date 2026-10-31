@@ -3,11 +3,13 @@
 // 1. Verifica la firma (x-signature): si no coincide, no viene de Mercado Pago.
 // 2. Consulta el pago real en Mercado Pago (no se confía en lo que trae el aviso).
 // 3. Aprobado y con el monto exacto del pedido → pago "pagado" y pedido "preparado".
+//    Si el pedido ya estaba cancelado → pago "por_reembolsar" (el admin devuelve el dinero).
 //    Rechazado o cancelado → pago "fallido"; el pedido espera un reintento.
 //
 // Secretos necesarios: MP_ACCESS_TOKEN y MP_WEBHOOK_SECRET (clave secreta que
 // Mercado Pago muestra al configurar el webhook).
-// Ojo: los pagos de prueba no envían avisos; se prueba con "Simular" en el panel.
+// En modo prueba los avisos llegan solo con el vendedor de prueba (ver crear-pago);
+// también se puede probar con "Simular" en el panel de Mercado Pago.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -55,7 +57,9 @@ Deno.serve(async (req) => {
   const rechazado = pago.status === 'rejected' || pago.status === 'cancelled';
 
   if (aprobado) {
-    await supabase.from('pagos').update({ estado: 'pagado', referencia_externa: idPago }).eq('pedido_id', pedido.id);
+    // Pagó tarde: el pedido ya se canceló (por tiempo o por el cliente).
+    const estadoPago = pedido.estado === 'cancelado' ? 'por_reembolsar' : 'pagado';
+    await supabase.from('pagos').update({ estado: estadoPago, referencia_externa: idPago }).eq('pedido_id', pedido.id);
     if (pedido.estado === 'pendiente_pago') {
       await supabase.rpc('cambiar_estado_pedido', { p_numero: pedido.numero, p_estado_nuevo: 'preparado' });
     }

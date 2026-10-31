@@ -72,8 +72,15 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: req.headers.get('Authorization')! } },
   });
   const { data: usuario } = await supabase.auth.getUser();
-  const { data: pedido } = await supabase.from('pedidos').select('id, numero, total').eq('numero', numero).maybeSingle();
+  const { data: pedido } = await supabase
+    .from('pedidos')
+    .select('id, numero, total, estado')
+    .eq('numero', numero)
+    .maybeSingle();
   if (!usuario.user || !pedido) return respuesta({ error: 'El pedido no existe.' }, 404);
+
+  // Solo se cobra un pedido que todavía espera su pago (no uno pagado o cancelado).
+  if (pedido.estado !== 'pendiente_pago') return respuesta({ error: 'Este pedido ya no se puede pagar.' }, 409);
 
   const urlWebhook = `${Deno.env.get('SUPABASE_URL')}/functions/v1/webhook-mercadopago`;
 

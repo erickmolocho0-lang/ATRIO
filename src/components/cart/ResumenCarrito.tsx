@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import type { NombreColor } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
 import { ESPACIO, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import type { ResumenCompra } from '@/types';
 import { formatearSoles } from '@/utils/moneda';
@@ -17,6 +18,8 @@ interface PropiedadesFila {
 }
 
 function Fila({ etiqueta, valor, acento, total }: PropiedadesFila) {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   return (
     <View style={styles.fila}>
       <Text style={[styles.etiqueta, total && styles.etiquetaTotal]}>{etiqueta}</Text>
@@ -34,6 +37,8 @@ function Fila({ etiqueta, valor, acento, total }: PropiedadesFila) {
 }
 
 export function ResumenCarrito({ resumen, envio }: PropiedadesResumenCarrito) {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   return (
     <View style={styles.contenedor}>
       <Fila etiqueta="Subtotal" valor={formatearSoles(resumen.subtotal)} />
@@ -54,18 +59,18 @@ export function ResumenCarrito({ resumen, envio }: PropiedadesResumenCarrito) {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
   contenedor: {
-    backgroundColor: COLORS.blanco,
+    backgroundColor: colores.blanco,
     borderRadius: RADIO.resumen,
     padding: ESPACIO.base,
     gap: ESPACIO.md,
   },
   fila: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
-  etiqueta: { fontFamily: TIPOGRAFIA.cuerpo, fontSize: 13, color: COLORS.textoSecundario },
-  etiquetaTotal: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: COLORS.tinta },
-  valor: { fontFamily: TIPOGRAFIA.mono, fontSize: 13, color: COLORS.tinta },
-  valorAcento: { color: COLORS.arcilla },
-  valorTotal: { fontFamily: TIPOGRAFIA.monoFuerte, fontSize: 16, color: COLORS.tinta },
-  separador: { height: 1, backgroundColor: COLORS.borde },
+  etiqueta: { fontFamily: TIPOGRAFIA.cuerpo, fontSize: 13, color: colores.textoSecundario },
+  etiquetaTotal: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: colores.tinta },
+  valor: { fontFamily: TIPOGRAFIA.mono, fontSize: 13, color: colores.tinta },
+  valorAcento: { color: colores.arcilla },
+  valorTotal: { fontFamily: TIPOGRAFIA.monoFuerte, fontSize: 16, color: colores.tinta },
+  separador: { height: 1, backgroundColor: colores.borde },
 });

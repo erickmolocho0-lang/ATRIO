@@ -1,19 +1,35 @@
-import { Alert, Pressable, ScrollView, Share, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarraHorizontal } from '@/components/admin/BarraHorizontal';
 import { BarrasPorDia } from '@/components/admin/BarrasPorDia';
 import { AccionesAdmin, NavegacionAdmin } from '@/components/admin/NavegacionAdmin';
+import { SelectorRangoFechas } from '@/components/admin/SelectorRangoFechas';
 import { TarjetaIndicador } from '@/components/admin/TarjetaIndicador';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import { useReportes } from '@/hooks/useReportes';
 import { useTema } from '@/hooks/useTema';
+import { compartirCsv } from '@/services/servicioExportacion';
 import { formatearSoles } from '@/utils/moneda';
+import { fechaLocalIso } from '@/utils/rangoFechas';
 import { generarCsvProductos } from '@/utils/reportes';
 
 export default function PantallaReportes() {
   const { colores, esOscuro } = useTema();
-  const { cargando, error, reporte, usarEjemplo, setUsarEjemplo, recargar } = useReportes();
+  const {
+    cargando,
+    error,
+    reporte,
+    usarEjemplo,
+    setUsarEjemplo,
+    recargar,
+    preset,
+    seleccionarPreset,
+    rango,
+    etiquetaRango,
+    aplicarRangoPersonalizado,
+    errorRango,
+  } = useReportes();
   const colorPerilla = usarEjemplo ? colores.papel : esOscuro ? '#A19E96' : '#FFFFFF';
 
   const hayVentas = !!reporte && reporte.resumen.totalPedidos > 0;
@@ -25,7 +41,12 @@ export default function PantallaReportes() {
       Alert.alert('Sin datos', 'No hay ventas para exportar todavía.');
       return;
     }
-    await Share.share({ title: 'Reporte de ventas ATRIO', message: generarCsvProductos(reporte) });
+    const nombre = `reporte-ventas_${fechaLocalIso(rango.desde)}_a_${fechaLocalIso(rango.hasta)}.csv`;
+    try {
+      await compartirCsv(nombre, generarCsvProductos(reporte));
+    } catch (err) {
+      Alert.alert('No se pudo exportar', err instanceof Error ? err.message : 'Inténtalo de nuevo.');
+    }
   };
 
   return (
@@ -38,20 +59,30 @@ export default function PantallaReportes() {
       <NavegacionAdmin />
 
       <ScrollView contentContainerStyle={styles.contenido} showsVerticalScrollIndicator={false}>
-        <View style={[styles.filaEjemplo, { borderColor: colores.borde }]}>
-          <View style={styles.textosEjemplo}>
-            <Text style={[styles.tituloEjemplo, { color: colores.tinta }]}>Datos de ejemplo</Text>
-            <Text style={[styles.descripcionEjemplo, { color: colores.textoSecundario }]}>
-              Muestra cómo se ve el reporte con un volumen mayor de ventas.
-            </Text>
+        <SelectorRangoFechas
+          preset={preset}
+          etiquetaRango={etiquetaRango}
+          error={errorRango}
+          alSeleccionar={seleccionarPreset}
+          alAplicarPersonalizado={aplicarRangoPersonalizado}
+        />
+
+        {__DEV__ ? (
+          <View style={[styles.filaEjemplo, { borderColor: colores.borde }]}>
+            <View style={styles.textosEjemplo}>
+              <Text style={[styles.tituloEjemplo, { color: colores.tinta }]}>Datos de ejemplo</Text>
+              <Text style={[styles.descripcionEjemplo, { color: colores.textoSecundario }]}>
+                Muestra cómo se ve el reporte con un volumen mayor de ventas.
+              </Text>
+            </View>
+            <Switch
+              value={usarEjemplo}
+              onValueChange={setUsarEjemplo}
+              trackColor={{ false: colores.tinta14, true: colores.tinta }}
+              thumbColor={colorPerilla}
+            />
           </View>
-          <Switch
-            value={usarEjemplo}
-            onValueChange={setUsarEjemplo}
-            trackColor={{ false: colores.tinta14, true: colores.tinta }}
-            thumbColor={colorPerilla}
-          />
-        </View>
+        ) : null}
 
         {usarEjemplo ? (
           <Text style={[styles.aviso, { color: colores.arcilla }]}>
@@ -70,8 +101,7 @@ export default function PantallaReportes() {
           </View>
         ) : !reporte || !hayVentas ? (
           <Text style={[styles.estado, { color: colores.textoSecundario }]}>
-            Aún no hay ventas registradas. Realiza una compra desde la app (checkout y pago) para
-            verla aquí, o activa "Datos de ejemplo" para ver cómo se ve el reporte.
+            No hay ventas en este período. Prueba con otro rango de fechas.
           </Text>
         ) : (
           <>
@@ -100,7 +130,7 @@ export default function PantallaReportes() {
 
             <View style={styles.seccion}>
               <Text style={[styles.tituloSeccion, { color: colores.textoSecundario }]}>
-                VENTAS POR DÍA (ÚLTIMOS 14)
+                VENTAS POR DÍA
               </Text>
               <BarrasPorDia datos={reporte.ventasPorDia} />
             </View>

@@ -5,7 +5,7 @@ import type { DatosPago } from './Checkout';
 export type MetodoPago = 'tarjeta' | 'yape' | 'contra_entrega';
 
 // Mismos valores que el CHECK de la tabla pagos.
-export type EstadoPago = 'pendiente' | 'pagado' | 'fallido' | 'reembolsado';
+export type EstadoPago = 'pendiente' | 'pagado' | 'fallido' | 'por_reembolsar' | 'reembolsado';
 
 export interface Pedido extends DatosPago {
   numero: string;

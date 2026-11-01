@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { MarcadorImagenProducto } from '@/components/products/MarcadorImagenProducto';
-import { COLORS } from '@/constants/colors';
+import type { NombreColor } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
 import { ESPACIO, TIPOGRAFIA } from '@/constants/theme';
 import type { ItemCarrito } from '@/types';
 import { formatearSoles } from '@/utils/moneda';
@@ -12,6 +13,8 @@ function etiquetaVariante(item: ItemCarrito): string {
 }
 
 export function FilaResumenItem({ item }: { item: ItemCarrito }) {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   const { producto, cantidad } = item;
 
   return (
@@ -35,19 +38,19 @@ export function FilaResumenItem({ item }: { item: ItemCarrito }) {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
   contenedor: { flexDirection: 'row', gap: ESPACIO.md },
   miniatura: {
     width: 56,
     height: 72,
     borderRadius: 6,
     overflow: 'hidden',
-    backgroundColor: COLORS.lino,
+    backgroundColor: colores.lino,
   },
   info: { flex: 1, justifyContent: 'space-between' },
-  nombre: { fontFamily: TIPOGRAFIA.cuerpo, fontSize: 13, color: COLORS.tinta },
-  variante: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: COLORS.tinta50 },
+  nombre: { fontFamily: TIPOGRAFIA.cuerpo, fontSize: 13, color: colores.tinta },
+  variante: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: colores.tinta50 },
   filaPrecio: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  cantidad: { fontFamily: TIPOGRAFIA.mono, fontSize: 12, color: COLORS.textoSecundario },
-  importe: { fontFamily: TIPOGRAFIA.monoFuerte, fontSize: 13, color: COLORS.tinta },
+  cantidad: { fontFamily: TIPOGRAFIA.mono, fontSize: 12, color: colores.textoSecundario },
+  importe: { fontFamily: TIPOGRAFIA.monoFuerte, fontSize: 13, color: colores.tinta },
 });

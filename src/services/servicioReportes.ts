@@ -1,4 +1,5 @@
 import { generarPedidosDeEjemplo } from '@/data/ventasEjemplo';
+import { dentroDelRango, type RangoFechas } from '@/utils/rangoFechas';
 import { construirReporte } from '@/utils/reportes';
 import { servicioPedidos } from './servicioPedidos';
 import { servicioProductos } from './servicioProductos';
@@ -27,10 +28,14 @@ async function obtenerPedidosReales(): Promise<PedidoVenta[]> {
 }
 
 export const servicioReportes = {
-  async obtenerReporte({ conEjemplo = false }: { conEjemplo?: boolean } = {}): Promise<ReporteVentas> {
-    const pedidos = conEjemplo
+  async obtenerReporte({
+    conEjemplo = false,
+    rango,
+  }: { conEjemplo?: boolean; rango?: RangoFechas } = {}): Promise<ReporteVentas> {
+    const todos = conEjemplo
       ? generarPedidosDeEjemplo(await servicioProductos.obtenerProductos())
       : await obtenerPedidosReales();
+    const pedidos = rango ? todos.filter((pedido) => dentroDelRango(pedido.fecha, rango)) : todos;
     return construirReporte(pedidos);
   },
 };

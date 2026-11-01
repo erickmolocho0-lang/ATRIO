@@ -1,8 +1,6 @@
 import { CONTACTO_TIENDA } from '@/constants/contactoTienda';
-import { metodosEntrega } from '@/data/metodosEntrega';
 import { metodosPago } from '@/data/metodosPago';
 import { nombreEstadoPedido } from '@/data/estadosPedido';
-import { formatearSoles } from '@/utils/moneda';
 
 export interface PreguntaAyuda {
   id: string;
@@ -16,15 +14,13 @@ export interface SeccionAyuda {
   preguntas: PreguntaAyuda[];
 }
 
-// Las respuestas sobre entrega, pagos y estados se arman con los mismos datos
-// que usa el checkout, así que no quedan desactualizadas si cambia un precio
-// o se quita un método de pago.
-const textoEntregas = metodosEntrega
-  .map((metodo) => {
-    const costo = metodo.costo > 0 ? ` (${formatearSoles(metodo.costo)})` : '';
-    return `• ${metodo.nombre}: ${metodo.descripcion}${costo}`;
-  })
-  .join('\n');
+// Las respuestas sobre pagos y estados se arman con los mismos datos que usa la
+// app, así que no quedan desactualizadas si se quita un método de pago.
+// Las opciones de entrega y sus costos viven en la base de datos y cambian según
+// la zona, por eso aquí no se repiten: se remite al checkout, que siempre muestra
+// los valores vigentes.
+const textoEntregas =
+  'Las opciones de entrega disponibles para tu dirección, con su costo y su plazo, aparecen en el checkout antes de pagar. Ahí eliges la que prefieras.';
 
 const textoPagos = metodosPago.map((opcion) => `• ${opcion.nombre}: ${opcion.descripcion}`).join('\n');
 

@@ -26,6 +26,10 @@ export function detectarProblemasSeleccion(
       mensaje: 'Agrega o elige una dirección para el envío.',
     });
   }
+  if (metodoEntrega?.tipo === 'envio' && direccion &&
+    (!direccion.zonaId || !direccion.destinatario?.trim() || !/^9\d{8}$/.test(direccion.telefono ?? ''))) {
+    problemas.push({ codigo: 'direccion-incompleta', mensaje: 'Edita tu direccion para completar zona, destinatario y celular.' });
+  }
   return problemas;
 }
 
@@ -41,6 +45,28 @@ export function detectarProblemasCantidad(items: ItemCarrito[]): ProblemaCheckou
       codigo: 'cantidad-invalida' as const,
       mensaje: `Revisa la cantidad de «${item.producto.nombre}» (talla ${item.talla}): debe estar entre ${CANTIDAD_MINIMA} y ${CANTIDAD_MAXIMA}.`,
     }));
+}
+
+/**
+ * Un problema por cada producto del carrito que el admin desactivó. Usa los
+ * productos releídos (productosActuales), no la copia guardada en el carrito.
+ */
+export function detectarProblemasInactivos(
+  items: ItemCarrito[],
+  productosActuales: Map<string, Producto>,
+): ProblemaCheckout[] {
+  const avisados = new Set<string>();
+  const problemas: ProblemaCheckout[] = [];
+  for (const item of items) {
+    const actual = productosActuales.get(item.producto.id);
+    if (!actual || actual.activo || avisados.has(actual.id)) continue;
+    avisados.add(actual.id);
+    problemas.push({
+      codigo: 'producto-inactivo',
+      mensaje: `«${item.producto.nombre}» ya no está disponible. Quítalo del carrito para continuar.`,
+    });
+  }
+  return problemas;
 }
 
 /**
@@ -69,10 +95,12 @@ export function detectarProblemasStock(
   for (const item of items) {
     const nombre = item.producto.nombre;
     const actual = productosActuales.get(item.producto.id);
-    if (!actual || !actual.activo) {
+    if (!actual) {
       avisar(`${item.producto.id}:ausente`, `«${nombre}» ya no está disponible.`);
       continue;
     }
+    // Los inactivos los reporta detectarProblemasInactivos.
+    if (!actual.activo) continue;
     const variante = buscarVariante(actual, item.talla, item.colorId);
     if (!variante) {
       avisar(
@@ -97,6 +125,9 @@ export function detectarProblemasStock(
 export interface ErroresDireccion {
   direccion?: string;
   distrito?: string;
+  zonaId?: string;
+  destinatario?: string;
+  telefono?: string;
 }
 
 export function validarDatosDireccion(datos: DatosDireccion): ErroresDireccion {
@@ -107,5 +138,8 @@ export function validarDatosDireccion(datos: DatosDireccion): ErroresDireccion {
   if (datos.distrito.trim().length < 2) {
     errores.distrito = 'Ingresa el distrito.';
   }
+  if (!datos.zonaId) errores.zonaId = 'Selecciona una zona con cobertura.';
+  if ((datos.destinatario?.trim().length ?? 0) < 2) errores.destinatario = 'Ingresa el nombre del destinatario.';
+  if (!/^9\d{8}$/.test(datos.telefono ?? '')) errores.telefono = 'Ingresa un celular peruano de 9 digitos que empiece con 9.';
   return errores;
 }

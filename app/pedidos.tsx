@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { EstadoVacio } from '@/components/common/EstadoVacio';
+import type { NombreColor } from '@/constants/colors';
 import { useTema } from '@/hooks/useTema';
-import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { nombreEstadoPedido } from '@/data/estadosPedido';
@@ -14,8 +14,8 @@ import type { Pedido } from '@/types';
 import { formatearSoles } from '@/utils/moneda';
 
 function FilaPedido({ pedido }: { pedido: Pedido }) {
-  const { colores: COLORS } = useTema();
-  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   const fecha = new Date(pedido.fecha).toLocaleDateString('es-PE', { dateStyle: 'medium' });
   const cantidadProductos = pedido.items.reduce((total, item) => total + item.cantidad, 0);
 
@@ -40,8 +40,8 @@ function FilaPedido({ pedido }: { pedido: Pedido }) {
 }
 
 export default function PantallaPedidos() {
-  const { colores: COLORS } = useTema();
-  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   const { usuario } = useAuth();
 
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
@@ -70,7 +70,7 @@ export default function PantallaPedidos() {
 
   function contenido() {
     if (cargando) {
-      return <ActivityIndicator style={styles.cargando} color={COLORS.tinta} />;
+      return <ActivityIndicator style={styles.cargando} color={colores.tinta} />;
     }
     if (!usuario) {
       return (
@@ -122,9 +122,8 @@ export default function PantallaPedidos() {
   );
 }
 
-const crearEstilos = (COLORS: Paleta) =>
-  StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: COLORS.papel },
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
+  pantalla: { flex: 1, backgroundColor: colores.papel },
   cargando: { marginTop: ESPACIO.xxl },
   lista: { paddingHorizontal: MEDIDAS.margenLateral, paddingBottom: ESPACIO.xxl },
   fila: {
@@ -134,19 +133,19 @@ const crearEstilos = (COLORS: Paleta) =>
     gap: ESPACIO.md,
     paddingVertical: ESPACIO.base,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borde,
+    borderBottomColor: colores.borde,
   },
   izquierda: { flex: 1, gap: 2 },
-  numero: { fontFamily: TIPOGRAFIA.monoFuerte, fontSize: 13, color: COLORS.tinta },
-  secundario: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: COLORS.textoSecundario },
+  numero: { fontFamily: TIPOGRAFIA.monoFuerte, fontSize: 13, color: colores.tinta },
+  secundario: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: colores.textoSecundario },
   derecha: { alignItems: 'flex-end', gap: 4 },
-  total: { fontFamily: TIPOGRAFIA.monoFuerte, fontSize: 13, color: COLORS.tinta },
+  total: { fontFamily: TIPOGRAFIA.monoFuerte, fontSize: 13, color: colores.tinta },
   estado: {
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 10,
     letterSpacing: 0.5,
-    color: COLORS.arcilla,
-    backgroundColor: COLORS.arcilla10,
+    color: colores.arcilla,
+    backgroundColor: colores.arcilla10,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: RADIO.chip,

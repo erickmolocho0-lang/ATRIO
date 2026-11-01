@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
@@ -7,8 +7,8 @@ import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { BotonPrimario } from '@/components/common/BotonPrimario';
 import { FormularioDireccion } from '@/components/checkout/FormularioDireccion';
 import { TarjetaDireccion } from '@/components/checkout/TarjetaDireccion';
+import type { NombreColor } from '@/constants/colors';
 import { useTema } from '@/hooks/useTema';
-import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS } from '@/constants/theme';
 import { useDirecciones } from '@/hooks/useDirecciones';
 import type { DatosDireccion, Direccion } from '@/types';
@@ -16,8 +16,8 @@ import type { DatosDireccion, Direccion } from '@/types';
 type Modo = { tipo: 'lista' } | { tipo: 'crear' } | { tipo: 'editar'; direccion: Direccion };
 
 export default function PantallaDirecciones() {
-  const { colores: COLORS } = useTema();
-  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   const { direcciones, cargando, error, direccionSeleccionada, seleccionarDireccion, crear, actualizar, eliminar } =
     useDirecciones();
   const [modo, setModo] = useState<Modo>({ tipo: 'lista' });
@@ -138,9 +138,8 @@ export default function PantallaDirecciones() {
   );
 }
 
-const crearEstilos = (COLORS: Paleta) =>
-  StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: COLORS.papel },
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
+  pantalla: { flex: 1, backgroundColor: colores.papel },
   contenido: {
     paddingHorizontal: MEDIDAS.margenLateral,
     paddingTop: ESPACIO.sm,
@@ -157,7 +156,7 @@ const crearEstilos = (COLORS: Paleta) =>
     paddingTop: ESPACIO.md,
     paddingBottom: ESPACIO.lg,
     borderTopWidth: 1,
-    borderTopColor: COLORS.borde,
-    backgroundColor: COLORS.papel,
+    borderTopColor: colores.borde,
+    backgroundColor: colores.papel,
   },
 });

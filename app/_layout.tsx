@@ -11,6 +11,13 @@ import { ConfiguracionProvider } from '@/context/ConfiguracionContext';
 import { useFuentesApp } from '@/hooks/useFuentesApp';
 import { useTema } from '@/hooks/useTema';
 
+// Ruta inicial del Stack raíz (en SDK 58, Stack ya no acepta la prop
+// initialRouteName; unstable_settings.initialRouteName quedó obsoleto en
+// favor de anchor).
+export const unstable_settings = {
+  anchor: 'index',
+};
+
 function ContenidoApp() {
   const { colores, esOscuro } = useTema();
 
@@ -18,7 +25,6 @@ function ContenidoApp() {
     <>
       <StatusBar style={esOscuro ? 'light' : 'dark'} />
       <Stack
-        initialRouteName="index"
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colores.papel },

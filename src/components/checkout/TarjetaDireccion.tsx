@@ -1,8 +1,7 @@
-import { useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type { NombreColor } from '@/constants/colors';
 import { useTema } from '@/hooks/useTema';
-import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import type { Direccion } from '@/types';
 
@@ -23,8 +22,8 @@ export function TarjetaDireccion({
   alEditar,
   alEliminar,
 }: PropiedadesTarjetaDireccion) {
-  const { colores: COLORS } = useTema();
-  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   return (
     <View style={[styles.contenedor, seleccionada && styles.seleccionada]}>
       <Pressable
@@ -38,7 +37,7 @@ export function TarjetaDireccion({
           <Ionicons
             name={seleccionada ? 'radio-button-on' : 'radio-button-off'}
             size={20}
-            color={seleccionada ? COLORS.tinta : COLORS.tinta40}
+            color={seleccionada ? colores.tinta : colores.tinta40}
           />
         ) : null}
         <View style={styles.textos}>
@@ -46,7 +45,9 @@ export function TarjetaDireccion({
             <Text style={styles.titulo}>{direccion.etiqueta ?? 'Dirección'}</Text>
             {direccion.predeterminada ? <Text style={styles.chip}>PREDETERMINADA</Text> : null}
           </View>
+          {direccion.destinatario ? <Text style={styles.linea}>{direccion.destinatario} · {direccion.telefono}</Text> : null}
           <Text style={styles.linea}>{direccion.direccion}</Text>
+          {direccion.zonaNombre ? <Text style={styles.linea}>{direccion.zonaNombre}</Text> : null}
           <Text style={styles.linea}>{direccion.distrito}</Text>
           {direccion.referencia ? (
             <Text style={styles.referencia}>Ref.: {direccion.referencia}</Text>
@@ -72,24 +73,23 @@ export function TarjetaDireccion({
           accessibilityRole="button"
           accessibilityLabel="Eliminar dirección"
         >
-          <Ionicons name="trash-outline" size={16} color={COLORS.arcilla} />
+          <Ionicons name="trash-outline" size={16} color={colores.arcilla} />
         </Pressable>
       ) : null}
     </View>
   );
 }
 
-const crearEstilos = (COLORS: Paleta) =>
-  StyleSheet.create({
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
   contenedor: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.borde,
+    borderColor: colores.borde,
     borderRadius: RADIO.imagen,
-    backgroundColor: COLORS.blanco,
+    backgroundColor: colores.blanco,
   },
-  seleccionada: { borderColor: COLORS.tinta },
+  seleccionada: { borderColor: colores.tinta },
   principal: {
     flex: 1,
     flexDirection: 'row',
@@ -100,19 +100,19 @@ const crearEstilos = (COLORS: Paleta) =>
   },
   textos: { flex: 1, gap: 2 },
   filaTitulo: { flexDirection: 'row', alignItems: 'center', gap: ESPACIO.sm },
-  titulo: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: COLORS.tinta },
+  titulo: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: colores.tinta },
   chip: {
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 8.5,
     letterSpacing: 0.8,
-    color: COLORS.arcilla,
-    backgroundColor: COLORS.arcilla10,
+    color: colores.arcilla,
+    backgroundColor: colores.arcilla10,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 3,
   },
-  linea: { fontFamily: TIPOGRAFIA.cuerpo, fontSize: 13, color: COLORS.tinta },
-  referencia: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: COLORS.textoSecundario },
+  linea: { fontFamily: TIPOGRAFIA.cuerpo, fontSize: 13, color: colores.tinta },
+  referencia: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: colores.textoSecundario },
   editar: {
     minHeight: MEDIDAS.areaTactilMinima,
     justifyContent: 'center',
@@ -121,7 +121,7 @@ const crearEstilos = (COLORS: Paleta) =>
   editarTexto: {
     fontFamily: TIPOGRAFIA.etiqueta,
     fontSize: 12,
-    color: COLORS.textoSecundario,
+    color: colores.textoSecundario,
     textDecorationLine: 'underline',
   },
 });

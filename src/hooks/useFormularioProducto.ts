@@ -1,6 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
+import { Alert, Platform } from 'react-native';
 import { servicioProductos } from '@/services/servicioProductos';
 import type { ColorProducto, DatosProductoGenerales, EtiquetaProducto, Producto, VarianteProducto } from '@/types';
 
@@ -188,17 +189,25 @@ export function useFormularioProducto(productoExistente?: Producto) {
     setGuardando(true);
     setErrorGuardado(null);
     try {
-      if (productoExistente) {
-        await servicioProductos.actualizarProducto(productoExistente.id, generales);
-        await servicioProductos.actualizarVariantesEImagenes(
-          productoExistente.id,
-          variantesActuales,
-          imagenes,
-        );
+      const { variantesRetiradas } = await servicioProductos.guardarProducto(
+        { ...generales, variantes: variantesActuales, imagenes },
+        productoExistente?.id,
+      );
+      if (variantesRetiradas.length > 0) {
+        // Variantes con movimientos o pedidos: la base no permite borrarlas,
+        // así que quedaron con stock 0. Se avisa antes de salir.
+        const lista = variantesRetiradas.map((v) => `${v.talla} / ${v.colorNombre}`).join(', ');
+        const aviso = `Las variantes ${lista} quedaron con stock 0 porque tienen historial.`;
+        if (Platform.OS === 'web') {
+          // En web, Alert.alert con botones no muestra nada.
+          window.alert(aviso);
+          router.back();
+        } else {
+          Alert.alert('Producto guardado', aviso, [{ text: 'Entendido', onPress: () => router.back() }]);
+        }
       } else {
-        await servicioProductos.crearProducto({ ...generales, variantes: variantesActuales, imagenes });
+        router.back();
       }
-      router.back();
       return true;
     } catch (err) {
       setErrorGuardado(err instanceof Error ? err.message : 'No se pudo guardar el producto.');

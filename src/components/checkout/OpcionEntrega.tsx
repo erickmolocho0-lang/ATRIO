@@ -1,8 +1,7 @@
-import { useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type { NombreColor } from '@/constants/colors';
 import { useTema } from '@/hooks/useTema';
-import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import type { MetodoEntrega } from '@/types';
 import { formatearSoles } from '@/utils/moneda';
@@ -14,8 +13,8 @@ interface PropiedadesOpcionEntrega {
 }
 
 export function OpcionEntrega({ metodo, seleccionado, alSeleccionar }: PropiedadesOpcionEntrega) {
-  const { colores: COLORS } = useTema();
-  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   return (
     <Pressable
       style={[styles.contenedor, seleccionado && styles.seleccionado]}
@@ -27,7 +26,7 @@ export function OpcionEntrega({ metodo, seleccionado, alSeleccionar }: Propiedad
       <Ionicons
         name={seleccionado ? 'radio-button-on' : 'radio-button-off'}
         size={20}
-        color={seleccionado ? COLORS.tinta : COLORS.tinta40}
+        color={seleccionado ? colores.tinta : colores.tinta40}
       />
       <View style={styles.textos}>
         <Text style={styles.nombre}>{metodo.nombre}</Text>
@@ -38,8 +37,7 @@ export function OpcionEntrega({ metodo, seleccionado, alSeleccionar }: Propiedad
   );
 }
 
-const crearEstilos = (COLORS: Paleta) =>
-  StyleSheet.create({
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
   contenedor: {
     minHeight: MEDIDAS.areaTactilMinima + ESPACIO.base,
     flexDirection: 'row',
@@ -48,13 +46,13 @@ const crearEstilos = (COLORS: Paleta) =>
     paddingHorizontal: ESPACIO.base,
     paddingVertical: ESPACIO.md,
     borderWidth: 1,
-    borderColor: COLORS.borde,
+    borderColor: colores.borde,
     borderRadius: RADIO.imagen,
-    backgroundColor: COLORS.blanco,
+    backgroundColor: colores.blanco,
   },
-  seleccionado: { borderColor: COLORS.tinta },
+  seleccionado: { borderColor: colores.tinta },
   textos: { flex: 1, gap: 2 },
-  nombre: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: COLORS.tinta },
-  descripcion: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: COLORS.textoSecundario },
-  costo: { fontFamily: TIPOGRAFIA.monoFuerte, fontSize: 13, color: COLORS.tinta },
+  nombre: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: colores.tinta },
+  descripcion: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: colores.textoSecundario },
+  costo: { fontFamily: TIPOGRAFIA.monoFuerte, fontSize: 13, color: colores.tinta },
 });

@@ -1,16 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { ESPACIO, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import { useTema } from '@/hooks/useTema';
-import type { EstadoPedido, PedidoReciente } from '@/types';
+import { nombreEstadoPedido } from '@/data/estadosPedido';
+import type { PedidoReciente } from '@/types';
 import { formatearSoles } from '@/utils/moneda';
-
-const ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
-  preparado: 'Preparado',
-  en_camino: 'En camino',
-  entregado: 'Entregado',
-  cancelado: 'Cancelado',
-  devuelto: 'Devuelto',
-};
 
 function formatearFecha(fechaIso: string): string {
   const fecha = new Date(fechaIso);
@@ -33,7 +26,7 @@ export function FilaPedidoReciente({ pedido }: { pedido: PedidoReciente }) {
         <Text style={[styles.total, { color: colores.tinta }]}>{formatearSoles(pedido.total)}</Text>
         <View style={[styles.chip, { backgroundColor: colores.arcilla10 }]}>
           <Text style={[styles.chipTexto, { color: colores.arcilla }]}>
-            {ETIQUETA_ESTADO[pedido.estado]}
+            {nombreEstadoPedido[pedido.estado]}
           </Text>
         </View>
       </View>

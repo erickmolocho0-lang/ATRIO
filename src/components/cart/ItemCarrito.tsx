@@ -1,8 +1,7 @@
-import { useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type { NombreColor } from '@/constants/colors';
 import { useTema } from '@/hooks/useTema';
-import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, TIPOGRAFIA } from '@/constants/theme';
 import { CANTIDAD_MAXIMA, CANTIDAD_MINIMA } from '@/context/CarritoContext';
 import type { ItemCarrito } from '@/types';
@@ -21,8 +20,8 @@ export function FilaItemCarrito({
   alCambiarCantidad,
   alEliminar,
 }: PropiedadesFilaItemCarrito) {
-  const { colores: COLORS } = useTema();
-  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   const { producto, talla, colorId, cantidad } = item;
   const importeLinea = producto.precio * cantidad;
   const nombreColor = producto.colores.find((color) => color.id === colorId)?.nombre ?? colorId;
@@ -46,7 +45,7 @@ export function FilaItemCarrito({
             accessibilityRole="button"
             accessibilityLabel="Eliminar del carrito"
           >
-            <Ionicons name="close" size={18} color={COLORS.tinta40} />
+            <Ionicons name="close" size={18} color={colores.tinta40} />
           </Pressable>
         </View>
 
@@ -56,6 +55,7 @@ export function FilaItemCarrito({
             TALLA {talla} · {nombreColor}
           </Text>
         </View>
+        {producto.activo === false ? <Text style={styles.noDisponible}>Ya no disponible</Text> : null}
 
         <View style={styles.filaInferior}>
           <View style={styles.control}>
@@ -69,7 +69,7 @@ export function FilaItemCarrito({
               <Ionicons
                 name="remove"
                 size={16}
-                color={cantidad <= CANTIDAD_MINIMA ? COLORS.tinta40 : COLORS.tinta}
+                color={cantidad <= CANTIDAD_MINIMA ? colores.tinta40 : colores.tinta}
               />
             </Pressable>
             <Text style={styles.valorControl}>{cantidad}</Text>
@@ -80,7 +80,7 @@ export function FilaItemCarrito({
               accessibilityRole="button"
               accessibilityLabel="Aumentar cantidad"
             >
-              <Ionicons name="add" size={16} color={cantidad >= tope ? COLORS.tinta40 : COLORS.tinta} />
+              <Ionicons name="add" size={16} color={cantidad >= tope ? colores.tinta40 : colores.tinta} />
             </Pressable>
           </View>
 
@@ -91,15 +91,14 @@ export function FilaItemCarrito({
   );
 }
 
-const crearEstilos = (COLORS: Paleta) =>
-  StyleSheet.create({
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
   contenedor: { flexDirection: 'row', gap: ESPACIO.md },
   miniatura: {
     width: 78,
     height: 104,
     borderRadius: 6,
     overflow: 'hidden',
-    backgroundColor: COLORS.lino,
+    backgroundColor: colores.lino,
   },
   info: { flex: 1, justifyContent: 'space-between' },
   filaSuperior: {
@@ -108,18 +107,24 @@ const crearEstilos = (COLORS: Paleta) =>
     justifyContent: 'space-between',
     gap: ESPACIO.sm,
   },
-  nombre: { flex: 1, fontFamily: TIPOGRAFIA.cuerpo, fontSize: 13, color: COLORS.tinta },
+  nombre: { flex: 1, fontFamily: TIPOGRAFIA.cuerpo, fontSize: 13, color: colores.tinta },
   filaVariante: {
     marginTop: ESPACIO.xs,
     flexDirection: 'row',
     alignItems: 'center',
     gap: ESPACIO.xs,
   },
-  swatch: { width: 10, height: 10, borderRadius: 5, borderWidth: 1, borderColor: COLORS.borde },
+  swatch: { width: 10, height: 10, borderRadius: 5, borderWidth: 1, borderColor: colores.borde },
   talla: {
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 11,
-    color: COLORS.tinta50,
+    color: colores.tinta50,
+  },
+  noDisponible: {
+    marginTop: ESPACIO.xs,
+    fontFamily: TIPOGRAFIA.etiqueta,
+    fontSize: 11,
+    color: colores.arcilla,
   },
   filaInferior: {
     marginTop: ESPACIO.sm,
@@ -134,7 +139,7 @@ const crearEstilos = (COLORS: Paleta) =>
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: COLORS.borde,
+    borderColor: colores.borde,
     borderRadius: 6,
   },
   botonControl: {
@@ -143,6 +148,6 @@ const crearEstilos = (COLORS: Paleta) =>
     alignItems: 'center',
     justifyContent: 'center',
   },
-  valorControl: { fontFamily: TIPOGRAFIA.mono, fontSize: 13, color: COLORS.tinta },
-  importe: { fontFamily: TIPOGRAFIA.monoFuerte, fontSize: 13, color: COLORS.tinta },
+  valorControl: { fontFamily: TIPOGRAFIA.mono, fontSize: 13, color: colores.tinta },
+  importe: { fontFamily: TIPOGRAFIA.monoFuerte, fontSize: 13, color: colores.tinta },
 });

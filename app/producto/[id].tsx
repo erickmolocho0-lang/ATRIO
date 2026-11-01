@@ -48,6 +48,7 @@ export default function PantallaDetalleProducto() {
     );
   }
 
+  const noDisponible = !producto.activo;
   const agotado = Boolean(tallaSeleccionada && colorSeleccionado && (!varianteActual || varianteActual.stock <= 0));
 
   const alPresionarAnadir = () => {
@@ -73,6 +74,9 @@ export default function PantallaDetalleProducto() {
             {producto.categoriaNombre} · SKU {producto.sku}
           </Text>
           <Text style={styles.nombre}>{producto.nombre}</Text>
+          {noDisponible ? (
+            <Text style={styles.avisoNoDisponible}>Producto no disponible</Text>
+          ) : null}
 
           <View style={styles.filaPrecio}>
             <Text style={styles.precio}>{formatearSoles(producto.precio)}</Text>
@@ -106,9 +110,7 @@ export default function PantallaDetalleProducto() {
               tallaSeleccionada={tallaSeleccionada}
               alSeleccionar={seleccionarTalla}
             />
-            {errorSeleccion ? (
-              <Text style={styles.errorTalla}>Selecciona talla y color para continuar.</Text>
-            ) : null}
+            {errorSeleccion ? <Text style={styles.errorTalla}>{errorSeleccion}</Text> : null}
           </View>
 
           <View style={styles.informacion}>
@@ -129,9 +131,9 @@ export default function PantallaDetalleProducto() {
       <SafeAreaView edges={['bottom']} style={styles.barraInferior}>
         <View style={styles.filaBarra}>
           <BotonPrimario
-            texto={agotado ? 'AGOTADO' : 'AÑADIR AL CARRITO'}
+            texto={noDisponible ? 'NO DISPONIBLE' : agotado ? 'AGOTADO' : 'AÑADIR AL CARRITO'}
             onPress={alPresionarAnadir}
-            deshabilitado={agotado}
+            deshabilitado={noDisponible || agotado}
             style={styles.botonAnadir}
           />
           <View style={styles.botonCarrito}>
@@ -174,6 +176,12 @@ const crearEstilos = (COLORS: Paleta) =>
     fontFamily: TIPOGRAFIA.titulo,
     fontSize: 21,
     color: COLORS.tinta,
+  },
+  avisoNoDisponible: {
+    marginTop: ESPACIO.sm,
+    fontFamily: TIPOGRAFIA.etiqueta,
+    fontSize: 11.5,
+    color: COLORS.arcilla,
   },
   filaPrecio: {
     marginTop: ESPACIO.md,

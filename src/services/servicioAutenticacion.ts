@@ -1,4 +1,4 @@
-import type { Session, SupabaseClient } from '@supabase/supabase-js';
+import { FunctionsHttpError, type Session, type SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { servicioBiometria } from './servicioBiometria';
 import { CLAVES_ALMACENAMIENTO, servicioAlmacenamiento } from './storageService';
@@ -178,6 +178,21 @@ export const servicioAutenticacion = {
   async eliminarCuenta(usuarioId: string): Promise<void> {
     const cliente = requerirSupabase();
     const { error } = await cliente.functions.invoke('eliminar-cuenta', { method: 'POST' });
+    if (error instanceof FunctionsHttpError) {
+      let mensaje = 'No se pudo completar la eliminación de la cuenta.';
+      try {
+        const respuesta = error.context as Response;
+        const cuerpo = (await respuesta.json()) as { error?: string; message?: string };
+        if (respuesta.status === 404) {
+          mensaje = 'La función para eliminar cuentas no está desplegada en Supabase.';
+        } else if (cuerpo.error || cuerpo.message) {
+          mensaje = cuerpo.error ?? cuerpo.message ?? mensaje;
+        }
+      } catch {
+        console.error('servicioAutenticacion: la función devolvió un error sin respuesta JSON.', error);
+      }
+      throw new Error(mensaje);
+    }
     if (error) throw error;
 
     const { error: errorSesion } = await cliente.auth.signOut({ scope: 'local' });

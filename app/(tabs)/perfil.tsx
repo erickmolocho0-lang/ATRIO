@@ -32,10 +32,9 @@ export default function PantallaPerfil() {
           style: 'destructive',
           onPress: () => {
             void eliminarCuenta().catch((error: unknown) => {
-              console.error('perfil: no se pudo completar la eliminación de la cuenta.', error);
               Alert.alert(
                 'No se pudo completar',
-                error instanceof Error && error.message.startsWith('La cuenta se eliminó')
+                error instanceof Error && error.message
                   ? error.message
                   : 'No se pudo eliminar tu cuenta. Inténtalo de nuevo más tarde.',
               );

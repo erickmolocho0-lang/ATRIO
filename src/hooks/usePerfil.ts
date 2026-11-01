@@ -8,6 +8,7 @@ export function usePerfil() {
     eliminarCuenta: eliminarCuentaAuth,
   } = useAuth();
 
+  const irAEditarPerfil = () => router.push('/editar-perfil');
   const irAMisPedidos = () => router.push('/pedidos');
   const irAFavoritos = () => router.push('/(tabs)/favoritos');
   const irADirecciones = () => router.push('/direcciones');
@@ -35,6 +36,7 @@ export function usePerfil() {
 
   return {
     usuario,
+    irAEditarPerfil,
     irAMisPedidos,
     irAFavoritos,
     irADirecciones,

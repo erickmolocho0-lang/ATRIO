@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import type { CampanaInicio } from '@/types';
 import { MarcadorImagenProducto } from '@/components/products/MarcadorImagenProducto';
@@ -14,6 +16,8 @@ interface PropiedadesHeroCampana {
 const ALTURA_HERO = 330;
 
 export function HeroCampana({ campana, alPresionarBoton }: PropiedadesHeroCampana) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return (
     <View style={styles.contenedor}>
       <MarcadorImagenProducto uri={campana.imagenUrl} llenar radio={0} sinEtiqueta />
@@ -37,7 +41,8 @@ export function HeroCampana({ campana, alPresionarBoton }: PropiedadesHeroCampan
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   contenedor: {
     height: ALTURA_HERO,
     borderRadius: RADIO.imagen,

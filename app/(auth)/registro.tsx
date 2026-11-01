@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -12,13 +12,16 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { useAuth } from '@/context/AuthContext';
 import { ErrorConfirmacionPendiente, ErrorCorreoRegistrado } from '@/services/servicioAutenticacion';
 
 const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function PantallaRegistro() {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const insets = useSafeAreaInsets();
   const { registrar } = useAuth();
   const [nombre, setNombre] = useState('');
@@ -94,7 +97,8 @@ export default function PantallaRegistro() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: COLORS.papel },
   flexible: { flex: 1 },
   contenido: { flexGrow: 1, paddingHorizontal: 26 },

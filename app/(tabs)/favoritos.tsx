@@ -1,15 +1,19 @@
+import { useMemo } from 'react';
 import { router } from 'expo-router';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { FilaFavorito } from '@/components/products/FilaFavorito';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS } from '@/constants/theme';
 import { useCarrito } from '@/hooks/useCarrito';
 import { useFavoritos } from '@/hooks/useFavoritos';
 
 export default function PantallaFavoritos() {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const { productosFavoritos, quitarFavorito } = useFavoritos();
   const { agregarItem } = useCarrito();
 
@@ -59,7 +63,8 @@ export default function PantallaFavoritos() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: COLORS.papel },
   lista: {
     paddingHorizontal: MEDIDAS.margenLateral,

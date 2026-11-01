@@ -4,11 +4,11 @@ import { Alert, Platform, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { FilaInterruptor } from '@/components/profile/FilaInterruptor';
+import { useAceptaPromociones } from '@/hooks/useAceptaPromociones';
 import { useConfiguracion } from '@/hooks/useConfiguracion';
 import { useTema } from '@/hooks/useTema';
 import { useAuth } from '@/context/AuthContext';
 import { servicioNotificaciones } from '@/services/servicioNotificaciones';
-import { servicioCorreos } from '@/services/servicioCorreos';
 import { servicioBiometria } from '@/services/servicioBiometria';
 import { CLAVES_ALMACENAMIENTO, servicioAlmacenamiento } from '@/services/storageService';
 
@@ -16,6 +16,7 @@ export default function PantallaConfiguracion() {
   const { preferencias, alternarPreferencia } = useConfiguracion();
   const { colores } = useTema();
   const { usuario } = useAuth();
+  const { aceptaPromociones, cambiarAceptaPromociones } = useAceptaPromociones();
 
   const manejarNotificaciones = async (activar: boolean) => {
     if (activar) {
@@ -39,20 +40,6 @@ export default function PantallaConfiguracion() {
       await servicioNotificaciones.cancelarTodas();
     }
     alternarPreferencia('notificaciones');
-  };
-
-  const manejarCorreosPromocionales = async (activar: boolean) => {
-    if (!usuario) {
-      Alert.alert('Inicia sesión', 'Debes iniciar sesión para gestionar correos promocionales.');
-      return;
-    }
-    const exito = activar
-      ? await servicioCorreos.suscribir(usuario.email)
-      : await servicioCorreos.cancelarSuscripcion(usuario.email);
-
-    if (exito) {
-      alternarPreferencia('correosPromocionales');
-    }
   };
 
   const manejarBiometria = async (activar: boolean) => {
@@ -111,8 +98,8 @@ export default function PantallaConfiguracion() {
         <FilaInterruptor
           titulo="Correos promocionales"
           descripcion="Ofertas y descuentos por correo"
-          valor={preferencias.correosPromocionales}
-          onCambiar={manejarCorreosPromocionales}
+          valor={aceptaPromociones}
+          onCambiar={cambiarAceptaPromociones}
         />
         <FilaInterruptor
           titulo="Biometría"

@@ -5,7 +5,6 @@ import type { MetodoPago } from '@/types';
 export interface PreferenciasConfiguracion {
   notificaciones: boolean;
   modoOscuro: boolean;
-  correosPromocionales: boolean;
   biometria: boolean;
   // Qué método aparece marcado en /pago. Nunca datos de tarjeta.
   metodoPagoPreferido: MetodoPago | null;
@@ -14,7 +13,6 @@ export interface PreferenciasConfiguracion {
 const PREFERENCIAS_INICIALES: PreferenciasConfiguracion = {
   notificaciones: true,
   modoOscuro: false,
-  correosPromocionales: false,
   biometria: false,
   metodoPagoPreferido: null,
 };

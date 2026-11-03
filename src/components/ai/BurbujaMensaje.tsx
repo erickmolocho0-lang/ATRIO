@@ -9,9 +9,24 @@ interface BurbujaMensajeProps {
   mensaje: MensajeChat;
 }
 
+// El modelo a veces responde con markdown, que Text muestra tal cual. Se
+// quitan las imágenes ![alt](url) (los productos ya salen como tarjetas),
+// los enlaces [texto](url) quedan solo como texto y se borran los **.
+export function limpiarTextoLuna(texto: string): string {
+  return texto
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/\*\*/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export function BurbujaMensaje({ mensaje }: BurbujaMensajeProps) {
   const { colores } = useTema();
   const esUsuario = mensaje.rol === 'usuario';
+  const texto = esUsuario ? mensaje.texto : limpiarTextoLuna(mensaje.texto);
 
   return (
     <View style={[styles.fila, esUsuario && styles.filaUsuario]}>
@@ -26,7 +41,7 @@ export function BurbujaMensaje({ mensaje }: BurbujaMensajeProps) {
         ]}
       >
         <Text style={[styles.texto, { color: esUsuario ? colores.papel : colores.tinta }]}>
-          {mensaje.texto}
+          {texto}
         </Text>
       </View>
 

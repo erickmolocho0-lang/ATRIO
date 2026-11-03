@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { isRunningInExpoGo } from 'expo';
 import { Platform } from 'react-native';
 import { CLAVES_ALMACENAMIENTO, servicioAlmacenamiento } from '@/services/storageService';
@@ -94,6 +95,32 @@ export const servicioNotificaciones = {
       });
     } catch (error) {
       console.warn('No se pudo mostrar la notificación del pedido.', error);
+    }
+  },
+
+  // Token de Expo Push de este dispositivo, o null si no se puede obtener:
+  // Expo Go en Android, sin permiso, simulador o proyecto sin identificar.
+  // Nunca lanza error: sin token solo se dejan de recibir avisos remotos.
+  async obtenerTokenPush({ pedirPermiso }: { pedirPermiso: boolean }): Promise<string | null> {
+    try {
+      if (!soportadoEnEsteEntorno()) return null;
+
+      const Notifications = await cargarNotifications();
+      let concedido: boolean;
+      if (pedirPermiso) {
+        concedido = await servicioNotificaciones.solicitarPermiso();
+      } else {
+        const { status } = await Notifications.getPermissionsAsync();
+        concedido = status === 'granted';
+      }
+      if (!concedido) return null;
+
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+      const token = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
+      return token.data;
+    } catch (error) {
+      console.warn('No se pudo obtener el token de notificaciones.', error);
+      return null;
     }
   },
 

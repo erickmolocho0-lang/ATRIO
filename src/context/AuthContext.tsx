@@ -10,6 +10,7 @@ import { servicioAutenticacion } from '@/services/servicioAutenticacion';
 import { servicioPerfil } from '@/services/servicioPerfil';
 import { supabase } from '@/lib/supabase';
 import type { Usuario } from '@/types/Usuario';
+import { servicioDispositivosPush } from '@/services/servicioDispositivosPush';
 import type { DatosPerfil } from '@/utils/perfil';
 
 const MS_LIMITE_RESTAURAR_SESION = 8000;
@@ -105,6 +106,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const cerrarSesion = useCallback(async () => {
+    await servicioDispositivosPush.eliminar();
     await servicioAutenticacion.cerrarSesion();
     setUsuario(null);
   }, []);

@@ -1,14 +1,18 @@
+import { useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { MarcadorImagenProducto } from '@/components/products/MarcadorImagenProducto';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, TIPOGRAFIA } from '@/constants/theme';
 import { useCategorias } from '@/hooks/useCategorias';
 
 export default function PantallaCategorias() {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const categorias = useCategorias();
 
   return (
@@ -45,7 +49,8 @@ export default function PantallaCategorias() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: COLORS.papel },
   lista: { paddingHorizontal: MEDIDAS.margenLateral, paddingBottom: ESPACIO.xxl },
   fila: {

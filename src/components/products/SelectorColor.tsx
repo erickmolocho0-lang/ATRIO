@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
  import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, TIPOGRAFIA } from '@/constants/theme';
 import type { ColorProducto } from '@/types';
 
@@ -16,6 +18,8 @@ export function SelectorColor({
   colorSeleccionado,
   alSeleccionar,
 }: PropiedadesSelectorColor) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return (
     <View>
       <Text style={styles.etiqueta}>COLOR</Text>
@@ -50,7 +54,8 @@ export function SelectorColor({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   etiqueta: {
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 9.5,

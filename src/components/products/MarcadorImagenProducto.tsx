@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Image, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { RADIO, RELACION_IMAGEN, TIPOGRAFIA } from '@/constants/theme';
 
 interface PropiedadesMarcadorImagenProducto {
@@ -25,6 +26,8 @@ export function MarcadorImagenProducto({
   llenar = false,
   style,
 }: PropiedadesMarcadorImagenProducto) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const [fallo, setFallo] = useState(false);
 
   // Si cambia la URL (ej. otro producto/categoría reutilizando el mismo
@@ -66,7 +69,8 @@ export function MarcadorImagenProducto({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   contenedor: {
     width: '100%',
     backgroundColor: COLORS.lino,

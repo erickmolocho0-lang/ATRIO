@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -5,12 +6,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CarruselCampana } from '@/components/common/CarruselCampana';
 import { CirculoCategoria } from '@/components/products/CirculoCategoria';
 import { TarjetaProducto } from '@/components/products/TarjetaProducto';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, MEDIDAS, TIPOGRAFIA } from '@/constants/theme';
 import { useFavoritos } from '@/hooks/useFavoritos';
 import { useInicio } from '@/hooks/useInicio';
 
 export default function PantallaInicio() {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const { campanas, categorias, novedades } = useInicio();
   const { esFavorito, alternarFavorito, cantidadFavoritos } = useFavoritos();
 
@@ -113,7 +117,8 @@ export default function PantallaInicio() {
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: COLORS.papel },
   contenido: { paddingBottom: ESPACIO.xxl },
   bloque: { paddingHorizontal: MEDIDAS.margenLateral },

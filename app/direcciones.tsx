@@ -7,7 +7,8 @@ import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { BotonPrimario } from '@/components/common/BotonPrimario';
 import { FormularioDireccion } from '@/components/checkout/FormularioDireccion';
 import { TarjetaDireccion } from '@/components/checkout/TarjetaDireccion';
-import { COLORS } from '@/constants/colors';
+import type { NombreColor } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
 import { ESPACIO, MEDIDAS } from '@/constants/theme';
 import { useDirecciones } from '@/hooks/useDirecciones';
 import type { DatosDireccion, Direccion } from '@/types';
@@ -15,6 +16,8 @@ import type { DatosDireccion, Direccion } from '@/types';
 type Modo = { tipo: 'lista' } | { tipo: 'crear' } | { tipo: 'editar'; direccion: Direccion };
 
 export default function PantallaDirecciones() {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   const { direcciones, cargando, error, direccionSeleccionada, seleccionarDireccion, crear, actualizar, eliminar } =
     useDirecciones();
   const [modo, setModo] = useState<Modo>({ tipo: 'lista' });
@@ -135,8 +138,8 @@ export default function PantallaDirecciones() {
   );
 }
 
-const styles = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: COLORS.papel },
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
+  pantalla: { flex: 1, backgroundColor: colores.papel },
   contenido: {
     paddingHorizontal: MEDIDAS.margenLateral,
     paddingTop: ESPACIO.sm,
@@ -153,7 +156,7 @@ const styles = StyleSheet.create({
     paddingTop: ESPACIO.md,
     paddingBottom: ESPACIO.lg,
     borderTopWidth: 1,
-    borderTopColor: COLORS.borde,
-    backgroundColor: COLORS.papel,
+    borderTopColor: colores.borde,
+    backgroundColor: colores.papel,
   },
 });

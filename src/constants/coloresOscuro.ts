@@ -38,3 +38,5 @@ export const COLORS_OSCURO: Record<keyof typeof COLORS, string> = {
   papel20: `rgba(${FONDO}, 0.20)`,
   papel60: `rgba(${FONDO}, 0.60)`,
 };
+
+export type Paleta = Record<keyof typeof COLORS, string>;

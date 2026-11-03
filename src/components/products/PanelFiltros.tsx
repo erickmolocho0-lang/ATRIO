@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '@/constants/colors';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import type { FiltrosCatalogo, OrdenCatalogo } from '@/hooks/useCatalogo';
 import { TALLAS_DISPONIBLES } from '@/hooks/useFormularioProducto';
 import { servicioProductos } from '@/services/servicioProductos';
@@ -41,6 +43,8 @@ export function PanelFiltros({
   alCambiarFiltros,
   alReiniciar,
 }: PropiedadesPanelFiltros) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const [colores, setColores] = useState<ColorProducto[]>([]);
 
   useEffect(() => {
@@ -184,7 +188,8 @@ export function PanelFiltros({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   fondo: { flex: 1, backgroundColor: COLORS.tinta35, justifyContent: 'flex-end' },
   hoja: {
     backgroundColor: COLORS.papel,

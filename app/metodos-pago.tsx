@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
-import { COLORS } from '@/constants/colors';
+import type { NombreColor } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import { useConfiguracion } from '@/hooks/useConfiguracion';
 import { metodosPago } from '@/data/metodosPago';
@@ -10,6 +11,8 @@ import { metodosPago } from '@/data/metodosPago';
 // El cliente elige qué método aparece marcado al pagar.
 // No se guardan tarjetas: los datos de la tarjeta se escriben en Mercado Pago.
 export default function PantallaMetodosPago() {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   const { preferencias, elegirMetodoPagoPreferido } = useConfiguracion();
 
   return (
@@ -31,7 +34,7 @@ export default function PantallaMetodosPago() {
               <Ionicons
                 name={seleccionado ? 'radio-button-on' : 'radio-button-off'}
                 size={20}
-                color={seleccionado ? COLORS.tinta : COLORS.tinta40}
+                color={seleccionado ? colores.tinta : colores.tinta40}
               />
               <View style={styles.textos}>
                 <Text style={styles.nombre}>{opcion.nombre}</Text>
@@ -46,8 +49,8 @@ export default function PantallaMetodosPago() {
   );
 }
 
-const styles = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: COLORS.papel },
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
+  pantalla: { flex: 1, backgroundColor: colores.papel },
   contenido: {
     paddingHorizontal: MEDIDAS.margenLateral,
     paddingTop: ESPACIO.sm,
@@ -58,7 +61,7 @@ const styles = StyleSheet.create({
     fontFamily: TIPOGRAFIA.monoFuerte,
     fontSize: 11,
     letterSpacing: 1.2,
-    color: COLORS.textoSecundario,
+    color: colores.textoSecundario,
   },
   opcion: {
     flexDirection: 'row',
@@ -67,12 +70,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: ESPACIO.base,
     paddingVertical: ESPACIO.md,
     borderWidth: 1,
-    borderColor: COLORS.borde,
+    borderColor: colores.borde,
     borderRadius: RADIO.imagen,
-    backgroundColor: COLORS.blanco,
+    backgroundColor: colores.blanco,
   },
-  opcionSeleccionada: { borderColor: COLORS.tinta },
+  opcionSeleccionada: { borderColor: colores.tinta },
   textos: { flex: 1, gap: 2 },
-  nombre: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: COLORS.tinta },
-  detalle: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: COLORS.textoSecundario },
+  nombre: { fontFamily: TIPOGRAFIA.titulo, fontSize: 14, color: colores.tinta },
+  detalle: { fontFamily: TIPOGRAFIA.mono, fontSize: 11, color: colores.textoSecundario },
 });

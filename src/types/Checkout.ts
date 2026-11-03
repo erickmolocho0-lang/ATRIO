@@ -18,6 +18,7 @@ export interface ProblemaCheckout {
     | 'carrito-vacio'
     | 'sin-metodo-entrega'
     | 'sin-direccion'
+    | 'direccion-incompleta'
     | 'cantidad-invalida'
     | 'sin-stock'
     | 'producto-inactivo';
@@ -29,4 +30,5 @@ export interface DatosPago {
   direccion: Direccion | null;
   metodoEntrega: MetodoEntrega;
   resumen: ResumenCheckout;
+  codigoCupon?: string | null;
 }

@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, TIPOGRAFIA } from '@/constants/theme';
 import type { Categoria } from '@/types';
 import { MarcadorImagenProducto } from './MarcadorImagenProducto';
@@ -12,6 +14,8 @@ interface PropiedadesCirculoCategoria {
 const DIAMETRO = 82;
 
 export function CirculoCategoria({ categoria, alPresionar }: PropiedadesCirculoCategoria) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return (
     <Pressable style={styles.contenedor} onPress={alPresionar} accessibilityRole="button">
       <View style={styles.circulo}>
@@ -24,7 +28,8 @@ export function CirculoCategoria({ categoria, alPresionar }: PropiedadesCirculoC
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   contenedor: { alignItems: 'center', gap: ESPACIO.sm, width: DIAMETRO },
   circulo: {
     width: DIAMETRO,

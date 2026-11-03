@@ -1,4 +1,5 @@
 import type { CategoriaVendida, PedidoVenta, ProductoVendido, ReporteVentas } from '@/types';
+import { fechaLocalIso } from '@/utils/rangoFechas';
 
 export function construirReporte(pedidos: PedidoVenta[]): ReporteVentas {
   const porProducto = new Map<string, ProductoVendido>();
@@ -10,7 +11,7 @@ export function construirReporte(pedidos: PedidoVenta[]): ReporteVentas {
 
   for (const pedido of pedidos) {
     totalIngresos += pedido.total;
-    const dia = pedido.fecha.slice(0, 10);
+    const dia = fechaLocalIso(pedido.fecha);
     porDia.set(dia, (porDia.get(dia) ?? 0) + pedido.total);
 
     for (const linea of pedido.lineas) {

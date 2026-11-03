@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
+import type { Paleta } from '@/constants/coloresOscuro';
 import { ESPACIO, RADIO, TIPOGRAFIA } from '@/constants/theme';
 
 interface PropiedadesSelectorTalla {
@@ -15,6 +17,8 @@ export function SelectorTalla({
   tallaSeleccionada,
   alSeleccionar,
 }: PropiedadesSelectorTalla) {
+  const { colores: COLORS } = useTema();
+  const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   return (
     <View>
       <Text style={styles.etiqueta}>TALLA</Text>
@@ -52,7 +56,8 @@ export function SelectorTalla({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (COLORS: Paleta) =>
+  StyleSheet.create({
   etiqueta: {
     fontFamily: TIPOGRAFIA.mono,
     fontSize: 9.5,

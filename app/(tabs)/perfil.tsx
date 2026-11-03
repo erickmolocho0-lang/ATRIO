@@ -9,6 +9,7 @@ import { useTema } from '@/hooks/useTema';
 
 export default function PantallaPerfil() {
   const {
+    irAEditarPerfil,
     irAMisPedidos,
     irAFavoritos,
     irADirecciones,
@@ -59,6 +60,7 @@ export default function PantallaPerfil() {
         </View>
 
         <View style={styles.seccion}>
+          <FilaOpcionPerfil icono="person-outline" texto="Editar perfil" onPress={irAEditarPerfil} />
           <FilaOpcionPerfil icono="receipt-outline" texto="Mis pedidos" onPress={irAMisPedidos} />
           <FilaOpcionPerfil icono="heart-outline" texto="Favoritos" onPress={irAFavoritos} />
           <FilaOpcionPerfil icono="location-outline" texto="Direcciones" onPress={irADirecciones} />

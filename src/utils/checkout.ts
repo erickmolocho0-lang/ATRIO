@@ -26,6 +26,10 @@ export function detectarProblemasSeleccion(
       mensaje: 'Agrega o elige una dirección para el envío.',
     });
   }
+  if (metodoEntrega?.tipo === 'envio' && direccion &&
+    (!direccion.zonaId || !direccion.destinatario?.trim() || !/^9\d{8}$/.test(direccion.telefono ?? ''))) {
+    problemas.push({ codigo: 'direccion-incompleta', mensaje: 'Edita tu direccion para completar zona, destinatario y celular.' });
+  }
   return problemas;
 }
 
@@ -121,6 +125,9 @@ export function detectarProblemasStock(
 export interface ErroresDireccion {
   direccion?: string;
   distrito?: string;
+  zonaId?: string;
+  destinatario?: string;
+  telefono?: string;
 }
 
 export function validarDatosDireccion(datos: DatosDireccion): ErroresDireccion {
@@ -131,5 +138,8 @@ export function validarDatosDireccion(datos: DatosDireccion): ErroresDireccion {
   if (datos.distrito.trim().length < 2) {
     errores.distrito = 'Ingresa el distrito.';
   }
+  if (!datos.zonaId) errores.zonaId = 'Selecciona una zona con cobertura.';
+  if ((datos.destinatario?.trim().length ?? 0) < 2) errores.destinatario = 'Ingresa el nombre del destinatario.';
+  if (!/^9\d{8}$/.test(datos.telefono ?? '')) errores.telefono = 'Ingresa un celular peruano de 9 digitos que empiece con 9.';
   return errores;
 }

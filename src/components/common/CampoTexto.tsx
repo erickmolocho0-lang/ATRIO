@@ -1,6 +1,7 @@
 import type { Ref } from 'react';
 import { StyleSheet, Text, TextInput, View, type TextInputInstance, type TextInputProps } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import type { NombreColor } from '@/constants/colors';
+import { useTema } from '@/hooks/useTema';
 import { ESPACIO, RADIO, TIPOGRAFIA } from '@/constants/theme';
 
 interface PropiedadesCampoTexto
@@ -30,6 +31,8 @@ export function CampoTexto({
   autoCapitalize = 'sentences',
   ...resto
 }: PropiedadesCampoTexto) {
+  const { colores } = useTema();
+  const styles = crearEstilos(colores);
   return (
     <View>
       <Text style={styles.etiqueta}>{etiqueta}</Text>
@@ -38,7 +41,7 @@ export function CampoTexto({
         style={[styles.entrada, error ? styles.entradaError : null]}
         value={valor}
         onChangeText={alCambiar}
-        placeholderTextColor={COLORS.tinta35}
+        placeholderTextColor={colores.tinta35}
         autoCapitalize={autoCapitalize}
         autoCorrect={false}
         accessibilityLabel={etiqueta}
@@ -49,31 +52,31 @@ export function CampoTexto({
   );
 }
 
-const styles = StyleSheet.create({
+const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create({
   etiqueta: {
     fontFamily: TIPOGRAFIA.monoFuerte,
     fontSize: 9.5,
     letterSpacing: 1.52,
-    color: COLORS.tinta50,
+    color: colores.tinta50,
     marginBottom: 6,
     textTransform: 'uppercase',
   },
   entrada: {
     height: 50,
-    backgroundColor: COLORS.blanco,
+    backgroundColor: colores.blanco,
     borderWidth: 1,
-    borderColor: COLORS.tinta14,
+    borderColor: colores.tinta14,
     borderRadius: RADIO.imagen,
     paddingHorizontal: 14,
     fontFamily: TIPOGRAFIA.cuerpo,
     fontSize: 14,
-    color: COLORS.tinta,
+    color: colores.tinta,
   },
-  entradaError: { borderColor: COLORS.arcilla },
+  entradaError: { borderColor: colores.arcilla },
   error: {
     marginTop: ESPACIO.xs,
     fontFamily: TIPOGRAFIA.etiqueta,
     fontSize: 11.5,
-    color: COLORS.arcilla,
+    color: colores.arcilla,
   },
 });

@@ -1,7 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { CampoBusqueda } from '@/components/common/CampoBusqueda';
@@ -14,8 +23,22 @@ import { useCategorias } from '@/hooks/useCategorias';
 import { useFavoritos } from '@/hooks/useFavoritos';
 import { useTema } from '@/hooks/useTema';
 
+// Columnas de la rejilla según el ancho de la pantalla: celular, pantallas
+// medianas (tablet, celular horizontal) y pantallas anchas (web).
+function columnasPara(ancho: number): number {
+  if (ancho >= 900) return 4;
+  if (ancho >= 600) return 3;
+  return 2;
+}
+
 export default function PantallaCatalogo() {
   const { colores } = useTema();
+  const { width: anchoPantalla } = useWindowDimensions();
+  const columnas = columnasPara(anchoPantalla);
+  // Ancho fijo por celda (en vez de flex: 1) para que las tarjetas midan lo
+  // mismo también en la última fila, aunque esté incompleta.
+  const anchoCelda =
+    (anchoPantalla - MEDIDAS.margenLateral * 2 - MEDIDAS.gapTarjetas * (columnas - 1)) / columnas;
   const parametros = useLocalSearchParams<{ categoria?: string }>();
   const categorias = useCategorias();
   const { esFavorito, alternarFavorito } = useFavoritos();
@@ -94,16 +117,18 @@ export default function PantallaCatalogo() {
       </View>
 
       <FlatList
+        // FlatList no permite cambiar numColumns sin volver a montarse.
+        key={columnas}
         data={productosVisibles}
         keyExtractor={(item) => item.id}
-        numColumns={2}
+        numColumns={columnas}
         columnWrapperStyle={styles.filaRejilla}
         contentContainerStyle={styles.rejilla}
         showsVerticalScrollIndicator={false}
         onEndReached={() => hayMas && cargarMas()}
         onEndReachedThreshold={0.4}
         renderItem={({ item }) => (
-          <View style={styles.celda}>
+          <View style={[styles.celda, { width: anchoCelda }]}>
             <TarjetaProducto
               producto={item}
               mostrarEtiquetas
@@ -177,6 +202,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   filaRejilla: { gap: MEDIDAS.gapTarjetas },
-  celda: { flex: 1, marginBottom: MEDIDAS.gapTarjetas },
+  celda: { marginBottom: MEDIDAS.gapTarjetas },
   pieCargando: { paddingVertical: ESPACIO.base, alignItems: 'center' },
 });

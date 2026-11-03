@@ -144,12 +144,12 @@ const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create
     paddingHorizontal: ESPACIO.lg,
   },
   botonPagarPresionado: { opacity: 0.85 },
-  botonPagarDeshabilitado: { backgroundColor: COLORS.tinta40 },
+  botonPagarDeshabilitado: { backgroundColor: colores.tinta40 },
   avisoNoDisponibles: {
     marginTop: ESPACIO.sm,
     fontFamily: TIPOGRAFIA.etiqueta,
     fontSize: 11.5,
-    color: COLORS.arcilla,
+    color: colores.arcilla,
     textAlign: 'center',
   },
   botonPagarTexto: {

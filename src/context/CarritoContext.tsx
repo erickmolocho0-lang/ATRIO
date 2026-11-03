@@ -1,7 +1,8 @@
-import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { cupones } from '@/data/cupones';
 import { servicioCarrito } from '@/services/servicioCarrito';
+import { servicioProductos } from '@/services/servicioProductos';
 import { CLAVES_ALMACENAMIENTO, servicioAlmacenamiento } from '@/services/storageService';
 import type { ItemCarrito, Producto, ResumenCompra } from '@/types';
 import { calcularResumenCompra } from '@/utils/precio';
@@ -29,6 +30,8 @@ interface ValorCarritoContext {
   vaciarCarrito: () => void;
   aplicarCupon: (codigo: string) => boolean;
   quitarCupon: () => void;
+  /** Vuelve a leer los productos del carrito (activo, precio, variantes) sin mostrar "cargando". */
+  sincronizarCarrito: () => Promise<void>;
 }
 
 export const CarritoContext = createContext<ValorCarritoContext | null>(null);
@@ -100,6 +103,45 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
     const aPersistir: EstadoCarritoPersistido = { items, codigoCupon };
     void servicioAlmacenamiento.guardarDato(CLAVES_ALMACENAMIENTO.carrito, aPersistir);
   }, [items, codigoCupon, usuario, listo, cargando]);
+
+  // Los ítems se leen desde una ref para que sincronizarCarrito no cambie en
+  // cada render: la pantalla la llama al enfocarse y, si dependiera de
+  // `items`, cada refresco volvería a disparar otro refresco.
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
+  // Refresco silencioso: no toca `cargando` ni `error`. Si falla la red, el
+  // carrito se queda como estaba (el checkout vuelve a validar igual).
+  const sincronizarCarrito = useCallback(async () => {
+    if (!listo || cargando) return;
+    try {
+      if (usuario) {
+        setItems(await servicioCarrito.obtenerItems());
+        return;
+      }
+
+      // Invitado: el carrito vive en el dispositivo con una copia de cada
+      // producto; se reemplaza esa copia por la versión actual (activo,
+      // precio y variantes). obtenerProductoPorId no filtra inactivos.
+      const ids = [...new Set(itemsRef.current.map((item) => item.producto.id))];
+      if (ids.length === 0) return;
+      const frescos = await Promise.all(ids.map((id) => servicioProductos.obtenerProductoPorId(id)));
+      const porId = new Map<string, Producto>();
+      for (const producto of frescos) {
+        if (producto) porId.set(producto.id, producto);
+      }
+      setItems((actuales) =>
+        lineasValidas(
+          actuales.map((item) => {
+            const actual = porId.get(item.producto.id);
+            return actual ? { ...item, producto: actual } : item;
+          }),
+        ),
+      );
+    } catch (err) {
+      console.warn('CarritoContext: no se pudo refrescar el carrito.', err);
+    }
+  }, [usuario, listo, cargando]);
 
   const agregarItem = useCallback(
     (producto: Producto, varianteId: string, cantidad = 1) => {
@@ -207,8 +249,9 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
 
   const porcentajeDescuento = codigoCupon ? buscarPorcentajeCupon(codigoCupon) ?? 0 : 0;
   const contador = items.reduce((acc, item) => acc + item.cantidad, 0);
+  // Los productos desactivados no se pueden comprar: no suman al total.
   const resumen = useMemo(
-    () => calcularResumenCompra(items, porcentajeDescuento),
+    () => calcularResumenCompra(items.filter((item) => item.producto.activo !== false), porcentajeDescuento),
     [items, porcentajeDescuento],
   );
 
@@ -227,6 +270,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
       vaciarCarrito,
       aplicarCupon,
       quitarCupon,
+      sincronizarCarrito,
     }),
     [
       items,
@@ -242,6 +286,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
       vaciarCarrito,
       aplicarCupon,
       quitarCupon,
+      sincronizarCarrito,
     ],
   );
 

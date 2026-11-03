@@ -25,3 +25,7 @@ verify_jwt = false
 
 [functions.eliminar-cuenta]
 verify_jwt = true
+
+# La llama la base de datos con un secreto compartido, sin sesión de usuario.
+[functions.notificar-estado-pedido]
+verify_jwt = false

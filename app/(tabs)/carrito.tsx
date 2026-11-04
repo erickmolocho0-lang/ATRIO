@@ -1,4 +1,5 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
@@ -25,9 +26,19 @@ export default function PantallaCarrito() {
     quitarItem,
     aplicarCupon,
     quitarCupon,
+    sincronizarCarrito,
   } = useCarrito();
 
+  // Cada vez que se abre la pestaña se releen los productos, para enterarse
+  // si el admin desactivó alguno sin esperar a un nuevo inicio de sesión.
+  useFocusEffect(
+    useCallback(() => {
+      void sincronizarCarrito();
+    }, [sincronizarCarrito]),
+  );
+
   const vacio = items.length === 0;
+  const hayNoDisponibles = items.some((item) => item.producto.activo === false);
 
   return (
     <SafeAreaView style={styles.pantalla} edges={['top']}>
@@ -80,13 +91,24 @@ export default function PantallaCarrito() {
 
           <View style={[styles.barraInferior, { paddingBottom: insets.bottom + ESPACIO.md }]}>
             <Pressable
-              style={({ pressed }) => [styles.botonPagar, pressed && styles.botonPagarPresionado]}
+              style={({ pressed }) => [
+                styles.botonPagar,
+                hayNoDisponibles && styles.botonPagarDeshabilitado,
+                pressed && !hayNoDisponibles && styles.botonPagarPresionado,
+              ]}
               accessibilityRole="button"
+              accessibilityState={{ disabled: hayNoDisponibles }}
+              disabled={hayNoDisponibles}
               onPress={() => router.push('/checkout')}
             >
               <Text style={styles.botonPagarTexto}>CONTINUAR AL PAGO</Text>
               <Text style={styles.botonPagarImporte}>{formatearSoles(resumen.total)}</Text>
             </Pressable>
+            {hayNoDisponibles ? (
+              <Text style={styles.avisoNoDisponibles}>
+                Quita los productos no disponibles para continuar.
+              </Text>
+            ) : null}
           </View>
         </>
       )}
@@ -122,6 +144,14 @@ const crearEstilos = (colores: Record<NombreColor, string>) => StyleSheet.create
     paddingHorizontal: ESPACIO.lg,
   },
   botonPagarPresionado: { opacity: 0.85 },
+  botonPagarDeshabilitado: { backgroundColor: colores.tinta40 },
+  avisoNoDisponibles: {
+    marginTop: ESPACIO.sm,
+    fontFamily: TIPOGRAFIA.etiqueta,
+    fontSize: 11.5,
+    color: colores.arcilla,
+    textAlign: 'center',
+  },
   botonPagarTexto: {
     fontFamily: TIPOGRAFIA.titulo,
     fontSize: 13,

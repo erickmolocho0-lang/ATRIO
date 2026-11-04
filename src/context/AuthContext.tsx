@@ -7,8 +7,11 @@ import {
   type PropsWithChildren,
 } from 'react';
 import { servicioAutenticacion } from '@/services/servicioAutenticacion';
+import { servicioPerfil } from '@/services/servicioPerfil';
 import { supabase } from '@/lib/supabase';
 import type { Usuario } from '@/types/Usuario';
+import { servicioDispositivosPush } from '@/services/servicioDispositivosPush';
+import type { DatosPerfil } from '@/utils/perfil';
 
 const MS_LIMITE_RESTAURAR_SESION = 8000;
 
@@ -25,6 +28,7 @@ interface AuthContexto {
   }) => Promise<Usuario>;
   cerrarSesion: () => Promise<void>;
   eliminarCuenta: () => Promise<void>;
+  actualizarPerfil: (datos: DatosPerfil) => Promise<void>;
 }
 
 const ContextoAuth = createContext<AuthContexto | null>(null);
@@ -102,6 +106,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const cerrarSesion = useCallback(async () => {
+    await servicioDispositivosPush.eliminar();
     await servicioAutenticacion.cerrarSesion();
     setUsuario(null);
   }, []);
@@ -112,8 +117,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setUsuario(null);
   }, [usuario]);
 
+  const actualizarPerfil = useCallback(async (datos: DatosPerfil) => {
+    if (!usuario) throw new Error('Debes iniciar sesión para editar tu perfil.');
+    await servicioPerfil.actualizarDatos(usuario.id, datos);
+    setUsuario({ ...usuario, nombre: datos.nombre, celular: datos.celular });
+  }, [usuario]);
+
   return (
-    <ContextoAuth.Provider value={{ usuario, listo, iniciarSesion, iniciarSesionBiometrica, registrar, cerrarSesion, eliminarCuenta }}>
+    <ContextoAuth.Provider value={{ usuario, listo, iniciarSesion, iniciarSesionBiometrica, registrar, cerrarSesion, eliminarCuenta, actualizarPerfil }}>
       {children}
     </ContextoAuth.Provider>
   );

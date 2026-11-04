@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useMemo } from 'react';
 import {
-  Dimensions,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
+  useWindowDimensions,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
@@ -22,9 +22,6 @@ interface PropiedadesGaleriaProducto {
   offsetSuperior?: number;
 }
 
-const ANCHO = Dimensions.get('window').width;
-const ALTO = ANCHO / RELACION_IMAGEN.producto;
-
 export function GaleriaProducto({
   imagenes,
   esFavorito,
@@ -32,6 +29,9 @@ export function GaleriaProducto({
   alVolver,
   offsetSuperior = 0,
 }: PropiedadesGaleriaProducto) {
+  // Se recalcula si cambia el ancho (girar el celular o redimensionar en web).
+  const { width: ANCHO } = useWindowDimensions();
+  const ALTO = ANCHO / RELACION_IMAGEN.producto;
   const { colores: COLORS } = useTema();
   const styles = useMemo(() => crearEstilos(COLORS), [COLORS]);
   const cantidad = imagenes.length > 0 ? imagenes.length : 3;

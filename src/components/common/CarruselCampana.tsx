@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react';
 import {
-  Dimensions,
   FlatList,
   StyleSheet,
   View,
+  useWindowDimensions,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
@@ -20,10 +20,11 @@ interface PropiedadesCarruselCampana {
 // Ancho del slide = ancho disponible dentro del contenedor con padding
 // lateral (MEDIDAS.margenLateral a cada lado) donde se monta este
 // carrusel en Inicio — así cada slide ocupa exactamente el mismo espacio
-// que ocupaba el HeroCampana original de un solo banner.
-const ANCHO_SLIDE = Dimensions.get('window').width - MEDIDAS.margenLateral * 2;
-
+// que ocupaba el HeroCampana original de un solo banner. Se recalcula si
+// cambia el ancho (girar el celular o redimensionar la ventana en web).
 export function CarruselCampana({ campanas, alPresionarBoton }: PropiedadesCarruselCampana) {
+  const { width: anchoPantalla } = useWindowDimensions();
+  const ANCHO_SLIDE = anchoPantalla - MEDIDAS.margenLateral * 2;
   const { colores } = useTema();
   const [indiceActivo, setIndiceActivo] = useState(0);
   const listaRef = useRef<FlatList<CampanaInicio>>(null);

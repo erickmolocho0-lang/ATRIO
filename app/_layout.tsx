@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-
+import { useRegistroPush } from '@/hooks/useRegistroPush';
 import { AuthProvider } from '@/context/AuthContext';
 import { CarritoProvider } from '@/context/CarritoContext';
 import { CheckoutProvider } from '@/context/CheckoutContext';
@@ -20,6 +20,7 @@ export const unstable_settings = {
 
 function ContenidoApp() {
   const { colores, esOscuro } = useTema();
+  useRegistroPush();
 
   return (
     <>

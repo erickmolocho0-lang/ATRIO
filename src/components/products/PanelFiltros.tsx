@@ -2,10 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState, useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { COLORS } from '@/constants/colors';
+import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
 import { useTema } from '@/hooks/useTema';
 import type { Paleta } from '@/constants/coloresOscuro';
-import { ESPACIO, MEDIDAS, TIPOGRAFIA } from '@/constants/theme';
 import type { FiltrosCatalogo, OrdenCatalogo } from '@/hooks/useCatalogo';
+import { TALLAS_DISPONIBLES } from '@/hooks/useFormularioProducto';
 import { servicioProductos } from '@/services/servicioProductos';
 import type { ColorProducto } from '@/types';
 import { BotonPrimario } from '@/components/common/BotonPrimario';
@@ -57,6 +59,14 @@ export function PanelFiltros({
     });
   };
 
+  const alternarTalla = (talla: string) => {
+    const yaActiva = filtros.tallas.includes(talla);
+    alCambiarFiltros({
+      ...filtros,
+      tallas: yaActiva ? filtros.tallas.filter((t) => t !== talla) : [...filtros.tallas, talla],
+    });
+  };
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={alCerrar}>
       <View style={styles.fondo}>
@@ -103,6 +113,25 @@ export function PanelFiltros({
               />
             </Pressable>
           ))}
+
+          <Text style={styles.seccion}>TALLA</Text>
+          <View style={styles.tallas}>
+            {TALLAS_DISPONIBLES.map((talla) => {
+              const activa = filtros.tallas.includes(talla);
+              return (
+                <Pressable
+                  key={talla}
+                  style={[styles.talla, activa && styles.tallaActiva]}
+                  onPress={() => alternarTalla(talla)}
+                  accessibilityRole="checkbox"
+                  accessibilityLabel={`Talla ${talla}`}
+                  accessibilityState={{ checked: activa }}
+                >
+                  <Text style={[styles.tallaTexto, activa && styles.tallaTextoActiva]}>{talla}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
 
           <Text style={styles.seccion}>COLOR</Text>
           <View style={styles.colores}>
@@ -193,6 +222,19 @@ const crearEstilos = (COLORS: Paleta) =>
   opcionSwitch: { marginTop: ESPACIO.sm },
   opcionTexto: { fontFamily: TIPOGRAFIA.cuerpo, fontSize: 14, color: COLORS.tinta },
   colores: { flexDirection: 'row', flexWrap: 'wrap', gap: ESPACIO.md, paddingVertical: ESPACIO.xs },
+  tallas: { flexDirection: 'row', flexWrap: 'wrap', gap: ESPACIO.sm, paddingVertical: ESPACIO.xs },
+  talla: {
+    width: 48,
+    height: 40,
+    borderRadius: RADIO.talla,
+    borderWidth: 1,
+    borderColor: COLORS.borde,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tallaActiva: { backgroundColor: COLORS.tinta, borderColor: COLORS.tinta },
+  tallaTexto: { fontFamily: TIPOGRAFIA.etiqueta, fontSize: 12, color: COLORS.tinta },
+  tallaTextoActiva: { color: COLORS.papel },
   colorOpcion: { alignItems: 'center', gap: ESPACIO.xs, width: 48 },
   swatch: {
     width: 28,

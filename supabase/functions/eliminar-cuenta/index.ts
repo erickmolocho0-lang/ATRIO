@@ -50,6 +50,15 @@ Deno.serve(async (req) => {
       return respuestaJson({ error: 'No se pudo completar la eliminación de la cuenta.' }, 500);
     }
 
+    const { error: errorHistorial } = await clienteAdmin
+      .from('historial_estados_pedido')
+      .update({ cambiado_por: null })
+      .eq('cambiado_por', usuarioId);
+    if (errorHistorial) {
+      console.error('eliminar-cuenta: no se pudo anonimizar el historial de estados.', errorHistorial);
+      return respuestaJson({ error: 'No se pudo preparar el historial de pedidos para eliminar la cuenta.' }, 500);
+    }
+
     const { error } = await clienteAdmin.auth.admin.deleteUser(usuarioId);
     if (error) {
       console.error('eliminar-cuenta: Supabase rechazó la eliminación de la cuenta.', error);

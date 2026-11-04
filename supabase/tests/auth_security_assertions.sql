@@ -124,6 +124,24 @@ BEGIN
     RAISE EXCEPTION 'FALLO: los pedidos anonimizados con envío no se conservan al eliminar una cuenta.';
   END IF;
 
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conrelid = 'public.historial_estados_pedido'::regclass
+      AND conname = 'historial_estados_pedido_cambiado_por_fkey'
+      AND confdeltype = 'n'
+  ) THEN
+    RAISE EXCEPTION 'FALLO: eliminar una cuenta no conserva el historial del pedido.';
+  END IF;
+
+  IF NOT has_column_privilege('service_role', 'public.pedidos', 'usuario_id', 'SELECT')
+    OR NOT has_column_privilege('service_role', 'public.pedidos', 'usuario_id', 'UPDATE')
+    OR NOT has_column_privilege('service_role', 'public.pedidos', 'direccion_id', 'UPDATE')
+    OR NOT has_column_privilege('service_role', 'public.historial_estados_pedido', 'cambiado_por', 'SELECT')
+    OR NOT has_column_privilege('service_role', 'public.historial_estados_pedido', 'cambiado_por', 'UPDATE') THEN
+    RAISE EXCEPTION 'FALLO: service_role no puede anonimizar los pedidos antes de eliminar la cuenta.';
+  END IF;
+
   RAISE NOTICE 'OK: proteccion de roles, escrituras administrativas, aislamiento de datos, trigger de celular y retencion anonimizada de pedidos.';
 END;
 $$;

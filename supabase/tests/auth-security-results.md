@@ -16,16 +16,18 @@ permite borrar una cuenta conservando los pedidos sin identificar al cliente.
 | Cliente solo lee sus pedidos, direcciones, carrito y favoritos | Las políticas existentes filtran por `auth.uid()` o por sus relaciones. | Consultar datos de dos clientes distintos con cada sesión. |
 | El registro copia el celular a `perfiles.telefono` | El trigger lee `celular` y `telefono`; además completa teléfonos vacíos desde metadata. | Registrar una cuenta de prueba y revisar su fila de perfil. |
 | Cambio, renovación y cierre de sesión actualizan el contexto | `AuthContext` está suscrito a `onAuthStateChange`; no se ejecutó una prueba interactiva de sesión. | Iniciar sesión, cerrar desde otra sesión y observar la app. |
-| Eliminación de cuenta | La Edge Function exige JWT válido, usa `service_role` solo en servidor y anonimiza pedidos antes de borrar la cuenta. No se ejecutó contra Supabase. | Desplegar la función y probarla con una cuenta descartable que tenga un pedido de envío. |
+| Eliminación de cuenta | La Edge Function exige JWT válido, usa `service_role` solo en servidor y anonimiza pedidos antes de borrar la cuenta. La migración nueva permite poner `historial_estados_pedido.cambiado_por` en `NULL` y concede a `service_role` acceso de lectura/escritura solo a las columnas necesarias. No se ejecutó contra Supabase. | Aplicar migraciones y probarla con una cuenta descartable que tenga un pedido cancelado. |
 
 ## Estado de validación
 
 `auth_security_assertions.sql` verifica la presencia y las expresiones de políticas,
-triggers y la FK de anonimización cuando se ejecute en Supabase SQL Editor. No
-comprueba una solicitud real con cuentas cliente/admin. Las migraciones ni la
-función Edge se han desplegado desde este cambio.
+triggers, permisos de anonimización y las FKs que conservan el pedido y su historial
+cuando se ejecute en Supabase SQL Editor. No comprueba una solicitud real con cuentas
+cliente/admin. Las migraciones ni la función Edge se han desplegado desde este cambio.
 
 La eliminación conserva importes, artículos y el historial operativo del pedido,
-pero establece `pedidos.usuario_id` y `pedidos.direccion_id` en `NULL`. La
-restricción de `pedidos` permite esa combinación únicamente para pedidos de envío
-anonimizados; los pedidos nuevos de envío siguen necesitando dirección.
+pero establece `pedidos.usuario_id`, `pedidos.direccion_id` y
+`historial_estados_pedido.cambiado_por` en `NULL`. La restricción de `pedidos`
+permite esa combinación únicamente para pedidos de envío anonimizados; los pedidos
+nuevos de envío siguen necesitando dirección. La eliminación aún no debe presentarse
+como probada hasta completar la prueba en Supabase con una cuenta descartable.

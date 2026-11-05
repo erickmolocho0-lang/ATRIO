@@ -31,7 +31,7 @@ export default function PantallaPago() {
   const { preferencias } = useConfiguracion();
 
   // Preseleccionada desde Perfil → Métodos de pago.
-  // Solo se preselecciona si el método sigue disponible (Plin ya no lo está).
+  // Solo se preselecciona si el método está en la lista de métodos de pago.
   const preferido = preferencias.metodoPagoPreferido;
   const [metodoPago, setMetodoPago] = useState<MetodoPago | null>(
     metodosPago.some((opcion) => opcion.metodo === preferido) ? preferido : null,

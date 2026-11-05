@@ -1,5 +1,5 @@
--- El webhook de Mercado Pago confirma o cancela pedidos con la clave de servicio,
--- así que cambiar_estado_pedido también debe aceptarlo. Solo cambia el primer IF.
+-- cambiar_estado_pedido acepta cambios del administrador y del servidor: el
+-- webhook de Mercado Pago confirma o cancela pedidos con la clave de servicio.
 
 CREATE OR REPLACE FUNCTION public.cambiar_estado_pedido(p_numero text, p_estado_nuevo text)
 RETURNS void

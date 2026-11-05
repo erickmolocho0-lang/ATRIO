@@ -291,6 +291,12 @@ export const servicioPedidos = {
     return actualizado;
   },
 
+  // El admin confirma que ya devolvió el dinero a mano (efectivo o panel de Mercado Pago).
+  async marcarReembolsado(numero: string): Promise<void> {
+    const { error } = await requerirSupabase().rpc('marcar_pago_reembolsado', { p_numero: numero });
+    if (error) throw new Error(error.message);
+  },
+
   // Única forma de confirmar una compra: todo (validar stock, crear pedido,
   // crear items, descontar stock, registrar movimiento, crear pago, limpiar
   // carrito) pasa por esta única función transaccional en la base — nunca

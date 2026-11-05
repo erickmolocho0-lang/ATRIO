@@ -11,7 +11,8 @@ ALTER TABLE public.pedidos
   ADD COLUMN costo_envio numeric(10,2) NOT NULL DEFAULT 0 CHECK (costo_envio >= 0);
 
 
--- 2. confirmar_compra. Hace lo mismo que antes, más (marcado con "NUEVO"):
+-- 2. confirmar_compra: valida el carrito, crea el pedido y su pago, descuenta
+--    el stock y vacía el carrito.
 --    · Tarjeta y Yape: el pedido nace "pendiente_pago" y el pago "pendiente";
 --      el webhook de Mercado Pago lo confirma. Contra entrega: "preparado".
 --    · No se puede comprar un producto inactivo.
@@ -53,7 +54,7 @@ BEGIN
     RAISE EXCEPTION 'Debes iniciar sesión para confirmar la compra.';
   END IF;
 
-  -- NUEVO: solo los métodos de pago que existen.
+  -- Solo los métodos de pago que existen.
   IF p_metodo_pago NOT IN ('tarjeta', 'yape', 'contra_entrega') THEN
     RAISE EXCEPTION 'Método de pago inválido.';
   END IF;
@@ -74,7 +75,7 @@ BEGIN
     END IF;
   END IF;
 
-  -- NUEVO: método de entrega exacto y costo de envío.
+  -- Método de entrega exacto y costo de envío.
   IF p_metodo_entrega_id IS NOT NULL THEN
     SELECT * INTO v_metodo_entrega
       FROM public.metodos_entrega
@@ -118,7 +119,7 @@ BEGIN
     WHERE ic.carrito_id = v_carrito_id
     FOR UPDATE OF vp
   LOOP
-    -- NUEVO: un producto desactivado por el admin ya no se vende.
+    -- Un producto desactivado por el admin no se vende.
     IF NOT v_item.activo THEN
       RAISE EXCEPTION 'Una de las prendas del carrito ya no está disponible.';
     END IF;
@@ -133,12 +134,12 @@ BEGIN
   JOIN public.productos p ON p.id = vp.producto_id
   WHERE ic.carrito_id = v_carrito_id;
 
-  -- NUEVO: el total incluye el envío.
+  -- El total incluye el envío.
   v_total := v_subtotal - v_descuento + v_costo_envio;
   v_igv := round(v_total - (v_total / 1.18), 2);
   v_numero := 'ATR-' || lpad(nextval('public.pedidos_numero_seq')::text, 4, '0');
 
-  -- NUEVO: tarjeta y Yape esperan la confirmación de Mercado Pago.
+  -- Tarjeta y Yape esperan la confirmación de Mercado Pago.
   IF p_metodo_pago = 'contra_entrega' THEN
     v_estado_inicial := 'preparado';
   ELSE
@@ -175,7 +176,7 @@ BEGIN
     VALUES (v_item.variante_id, 'venta', -v_item.cantidad, v_pedido_id, v_usuario_id);
   END LOOP;
 
-  -- NUEVO: el pago nace pendiente (antes nacía "pagado").
+  -- El pago nace pendiente: lo confirma Mercado Pago o se cobra al entregar.
   INSERT INTO public.pagos (pedido_id, metodo, estado, monto)
   VALUES (v_pedido_id, p_metodo_pago, 'pendiente', v_total);
 

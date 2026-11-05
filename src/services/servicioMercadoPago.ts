@@ -43,6 +43,18 @@ export const servicioMercadoPago = {
     const { data, error } = await requerirSupabase().functions.invoke('crear-pago', {
       body: { numero, metodo: 'yape', tokenYape: token.id },
     });
+    if (data?.enProceso) throw new Error('Tu pago con Yape está en proceso. Revisa tu pedido en unos minutos.');
     if (error || !data?.aprobado) throw new Error('Yape rechazó el pago.');
+  },
+
+  // Devuelve el dinero de un pago "por reembolsar" (solo administrador).
+  async reembolsar(numero: string): Promise<void> {
+    const { data, error } = await requerirSupabase().functions.invoke('reembolsar-pago', { body: { numero } });
+    if (error) {
+      // Si la función respondió con un mensaje, se muestra ese mensaje.
+      const detalle = await error.context?.json?.().catch(() => null);
+      throw new Error(detalle?.error ?? 'No se pudo hacer el reembolso.');
+    }
+    if (!data?.reembolsado) throw new Error(data?.error ?? 'No se pudo hacer el reembolso.');
   },
 };

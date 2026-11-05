@@ -9,6 +9,8 @@ import { TarjetaDireccion } from '@/components/checkout/TarjetaDireccion';
 import { EncabezadoPantalla } from '@/components/common/EncabezadoPantalla';
 import { EstadoVacio } from '@/components/common/EstadoVacio';
 import { PagarPedidoPendiente } from '@/components/pago/PagarPedidoPendiente';
+import { AccionesReembolso } from '@/components/admin/AccionesReembolso';
+import { nombreEstadoPago } from '@/data/estadosPago';
 import type { NombreColor } from '@/constants/colors';
 import { useTema } from '@/hooks/useTema';
 import { ESPACIO, MEDIDAS, RADIO, TIPOGRAFIA } from '@/constants/theme';
@@ -183,7 +185,17 @@ export default function PantallaDetallePedido() {
 
         <View style={styles.seccion}>
           <TituloSeccion texto="PAGO" />
-          <Text style={styles.texto}>{nombreMetodoPago(pedido.metodoPago)}</Text>
+          <Text style={styles.texto}>
+            {nombreMetodoPago(pedido.metodoPago)} · {nombreEstadoPago[pedido.estadoPago]}
+          </Text>
+          {esAdministrador && pedido.estadoPago === 'por_reembolsar' ? (
+            <AccionesReembolso
+              numero={pedido.numero}
+              metodoPago={pedido.metodoPago}
+              total={pedido.resumen.total}
+              alTerminar={cargarPedido}
+            />
+          ) : null}
           {!esAdministrador && pedido.estado === 'pendiente_pago' ? (
             <PagarPedidoPendiente numero={pedido.numero} metodoPago={pedido.metodoPago} alTerminar={cargarPedido} />
           ) : null}

@@ -4,8 +4,9 @@
 // · Tarjeta: crea una preferencia de Checkout Pro y devuelve la URL donde el
 //   cliente paga. Al terminar, Mercado Pago vuelve a la app (urlRetorno).
 // · Yape: recibe el token que la app obtuvo con el celular y el código de la
-//   app Yape, y crea el pago. La respuesta llega aprobada o rechazada al
+//   app Yape, y crea el pago. La respuesta suele llegar aprobada o rechazada al
 //   instante, así que aquí mismo se confirma (o se marca fallido) el pago.
+//   Si llega "en proceso", el pago sigue pendiente y no se toca.
 // La tarjeta la confirma el webhook (webhook-mercadopago).
 //
 // Secretos: MP_ACCESS_TOKEN (tarjeta) y MP_ACCESS_TOKEN_YAPE (Yape).
@@ -48,16 +49,23 @@ async function llamarMercadoPago(ruta: string, cuerpo: unknown, idempotencia: st
   return datos;
 }
 
-// Guarda el resultado de un pago con Yape. Usa la clave de servicio porque el
-// cliente no puede cambiar pagos ni estados por su cuenta.
+// Guarda el resultado de un pago con Yape ya aprobado o ya rechazado. Usa la
+// clave de servicio porque el cliente no puede cambiar pagos ni estados.
+// Si la base falla, lanza el error: el cobro ya se hizo y hay que avisarlo.
 async function registrarPagoYape(pedido: { id: string; numero: string }, aprobado: boolean, idPago: string) {
   const servidor = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-  await servidor
+  const { error } = await servidor
     .from('pagos')
     .update({ estado: aprobado ? 'pagado' : 'fallido', referencia_externa: idPago })
     .eq('pedido_id', pedido.id);
+  if (error) throw new Error(`No se pudo guardar el pago ${idPago} del pedido ${pedido.numero}.`);
+
   if (aprobado) {
-    await servidor.rpc('cambiar_estado_pedido', { p_numero: pedido.numero, p_estado_nuevo: 'preparado' });
+    const { error: errorEstado } = await servidor.rpc('cambiar_estado_pedido', {
+      p_numero: pedido.numero,
+      p_estado_nuevo: 'preparado',
+    });
+    if (errorEstado) throw new Error(`El pago ${idPago} se aprobó, pero no se pudo confirmar el pedido ${pedido.numero}.`);
   }
 }
 
@@ -74,7 +82,7 @@ Deno.serve(async (req) => {
   const { data: usuario } = await supabase.auth.getUser();
   const { data: pedido } = await supabase
     .from('pedidos')
-    .select('id, numero, total, estado')
+    .select('id, numero, total, estado, creado_en')
     .eq('numero', numero)
     .maybeSingle();
   if (!usuario.user || !pedido) return respuesta({ error: 'El pedido no existe.' }, 404);
@@ -94,6 +102,10 @@ Deno.serve(async (req) => {
           notification_url: urlWebhook,
           back_urls: { success: urlRetorno, failure: urlRetorno, pending: urlRetorno },
           auto_return: 'approved',
+          // La página de pago vence a los 30 minutos de creado el pedido, igual
+          // que el tiempo límite (cancelar_pedidos_sin_pagar).
+          expires: true,
+          expiration_date_to: new Date(Date.parse(pedido.creado_en) + 30 * 60 * 1000).toISOString(),
         },
         `preferencia-${pedido.numero}`,
         Deno.env.get('MP_ACCESS_TOKEN')!,
@@ -118,8 +130,12 @@ Deno.serve(async (req) => {
         Deno.env.get('MP_ACCESS_TOKEN_YAPE')!,
       );
       const aprobado = pago.status === 'approved';
-      await registrarPagoYape(pedido, aprobado, String(pago.id));
-      return respuesta({ aprobado });
+      const rechazado = pago.status === 'rejected' || pago.status === 'cancelled';
+      if (aprobado || rechazado) {
+        await registrarPagoYape(pedido, aprobado, String(pago.id));
+      }
+      // Ni aprobado ni rechazado = en proceso: el pedido sigue pendiente de pago.
+      return respuesta({ aprobado, enProceso: !aprobado && !rechazado });
     }
 
     return respuesta({ error: 'Método de pago inválido.' }, 400);

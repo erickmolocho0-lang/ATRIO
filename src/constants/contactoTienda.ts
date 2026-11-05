@@ -1,6 +1,4 @@
-// Datos de contacto de la tienda. Es el único lugar que hay que editar para
-// actualizar el Centro de ayuda: los botones de contacto aparecen solo si el
-// dato tiene valor, así que lo que quede vacío simplemente no se muestra.
+
 interface ContactoTienda {
   whatsapp: string;
   telefono: string;
@@ -10,22 +8,15 @@ interface ContactoTienda {
 }
 
 export const CONTACTO_TIENDA: ContactoTienda = {
-  // Número de WhatsApp en formato internacional, solo dígitos (sin "+", espacios ni guiones).
-  // Ejemplo: '519XXXXXXXX'. Vacío = no se muestra el botón.
-  whatsapp: '',
+  whatsapp: '51947870588',
 
-  // Teléfono para llamadas, tal como se debe marcar. Ejemplo: '+519XXXXXXXX'.
-  // Vacío = no se muestra el botón.
-  telefono: '',
+  telefono: '+51947870588',
 
-  // Pendiente de confirmar con la propietaria que este correo exista y se atienda.
-  correo: 'soporte@atrio.pe',
+  correo: 'soporteatrio2026@gmail.com',
 
-  // Texto libre, por ejemplo 'Lunes a sábado, 9:00 a 19:00'. Vacío = no se muestra.
-  horario: '',
+  horario: 'todos los días, 9:00 a 20:00 (hora de Perú)',
 
-  // Política de cambios y devoluciones (plazo, condiciones del producto, etc.).
-  // Se agrega a la respuesta de "¿Puedo cambiar o devolver un producto?".
-  // Vacío = la respuesta solo indica cómo iniciar el trámite.
-  politicaCambios: '',
+  politicaCambios:
+    'Los cambios se aceptan con la prenda sin uso y con sus etiquetas. ' +
+    'Si el cambio es por falla, el envío lo asumimos nosotros.',
 };
